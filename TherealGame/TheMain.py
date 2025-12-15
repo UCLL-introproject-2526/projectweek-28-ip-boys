@@ -26,7 +26,7 @@ def main():
     pygame.display.set_caption("Campus Creatures")
 
     base_path = os.path.dirname(__file__)
-    image_path = os.path.join(base_path, "Poster_loadingScreen.png")
+    image_path = os.path.join(base_path, "images", "Poster_loadingScreen.png")
 
     background = pygame.image.load(image_path)
     background = pygame.transform.scale(background, (1024, 768))
