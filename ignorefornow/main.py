@@ -1,6 +1,6 @@
 import pygame
 import sys
-from config import *
+from ignorefornow.config import *
 
 # We importeren de manager (die gaan we in de volgende stap maken)
 # In het voorbeeldproject zaten alle classes in een package 'models'
