@@ -1,16 +1,22 @@
-import os
 import pygame
+import config
 
 
 def create_main_surface():
-    return pygame.display.set_mode((1024, 768))
+    return config.create_screen()
 
 
 def draw_menu(screen, background):
     screen.blit(background, (0, 0))
 
-    button = pygame.Rect(412, 600, 200, 60)
-    pygame.draw.rect(screen, (0, 180, 0), button, border_radius=10)
+    button = pygame.Rect(
+        (config.SCREEN_WIDTH // 2) - 100,
+        config.SCREEN_HEIGHT - 170,
+        200,
+        60
+    )
+
+    pygame.draw.rect(screen, config.GREEN, button, border_radius=10)
 
     font = pygame.font.Font(None, 36)
     text = font.render("New Game", True, (0, 0, 0))
@@ -25,18 +31,18 @@ def main():
     screen = create_main_surface()
     pygame.display.set_caption("Campus Creatures")
 
-    base_path = os.path.dirname(__file__)
-    image_path = os.path.join(base_path, "images", "Poster_loadingScreen.png")
+    background = pygame.image.load(config.MENU_BACKGROUND)
 
-    background = pygame.image.load(image_path)
-    background = pygame.transform.scale(background, (1024, 768))
-
+    if not config.FULLSCREEN:
+        background = pygame.transform.scale(
+            background,
+            (config.SCREEN_WIDTH, config.SCREEN_HEIGHT)
+        )
 
     clock = pygame.time.Clock()
     running = True
     state = "MENU"
-
-    start_button = None  # ✅ BELANGRIJK
+    start_button = None
 
     while running:
         for event in pygame.event.get():
@@ -52,7 +58,7 @@ def main():
             start_button = draw_menu(screen, background)
 
         elif state == "GAME":
-            screen.fill((0, 0, 0))
+            screen.fill(config.BLACK)
             pygame.display.flip()
 
         clock.tick(60)
