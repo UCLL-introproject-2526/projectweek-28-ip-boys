@@ -6,6 +6,8 @@ class Enemy:
     def __init__(self, x, y, map_data):
         self.rect = pygame.Rect(x, y, config.ENEMY_SIZE, config.ENEMY_SIZE)
         self.map_data = map_data
+        self.hp = 30
+        self.alive = True
         
         # Beweging
         self.speed = config.ENEMY_SPEED
@@ -65,6 +67,9 @@ class Enemy:
         return False
 
     def draw(self, screen, camera_x, camera_y):
+        if not self.alive:
+            return
+
         draw_x = self.rect.x - camera_x
         draw_y = self.rect.y - camera_y
         

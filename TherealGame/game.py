@@ -1,7 +1,7 @@
 import pygame
 import config
 import UCLL_maps as maps
-import enemy # NIEUWE IMPORT
+from enemy import Enemy
 
 class Game:
     def __init__(self, screen):
@@ -38,7 +38,10 @@ class Game:
                 for col_idx, char in enumerate(row_string):
                     if char == 'Z':
                         # MAAK ENEMY
-                        new_enemy = enemy.Enemy(col_idx * self.tile_size, row_idx * self.tile_size, self.map_data_original)
+                        new_enemy = Enemy(
+                            col_idx * self.tile_size,
+                            row_idx * self.tile_size,
+                            self.map_data_original)
                         self.enemies.append(new_enemy)
                         new_row += "." # Vervang Z door vloer
                     else:
@@ -94,6 +97,22 @@ class Game:
         # UPDATE ALLE VIJANDEN
         for e in self.enemies:
             e.update()
+
+        keys = pygame.key.get_pressed()
+
+        if keys[pygame.K_SPACE]:
+            for e in self.enemies:
+                if not e.alive:
+                    continue
+
+                if self.player_rect.colliderect(e.rect):
+                    e.hp -= 10
+                    print("HIT! Enemy HP:", e.hp)
+
+                    if e.hp <= 0:
+                        print("ENEMY DEAD")
+                        e.alive = False
+
 
     def check_wall_collision(self):
         points = [self.player_rect.topleft, self.player_rect.topright,
