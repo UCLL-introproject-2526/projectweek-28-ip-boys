@@ -1,6 +1,6 @@
 GROUND_FLOOR = [
     "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
-    "W.....Z................Z................Z...................Z......................W",
+    "W..................................................................................W",
     "W..WWWWWWWWWWWWWWWW..WWWWWWWWWWWWWWWW..WWWWWWWWWWWWWWWW..WWWWWWWWWWWWWWWW..........W",
     "W..W..............W..W..............W..W..............W..W..............W..........W",
     "W..W.....Z........W..W..............W..W......Z.......W..W..............W..........W", # ZOMBIES!
