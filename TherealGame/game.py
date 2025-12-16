@@ -1,7 +1,11 @@
 import pygame
+import random
 import config
 import UCLL_maps as maps
 from enemy import Enemy
+from projectile import Projectile
+from npc import Teacher
+from item import Item
 
 class Game:
     def __init__(self, screen):
@@ -9,12 +13,41 @@ class Game:
         self.tile_size = config.TILE_SIZE
         
         self.player_rect = pygame.Rect(0, 0, config.PLAYER_SIZE, config.PLAYER_SIZE)
-        self.player_direction = "down" 
+        self.player_hp = config.PLAYER_HP_MAX
+        self.player_invulnerable_timer = 0 
+        
+        self.player_direction = "down"
+        
+        # INVENTORY
+        self.weapons_owned = ["pistol"] 
+        self.current_weapon_index = 0
+        self.ammo = {
+            "pistol": config.WEAPONS["pistol"]["start_ammo"],
+            "shotgun": config.WEAPONS["shotgun"]["start_ammo"]
+        }
+        self.has_key = False 
 
-        # LIJST VOOR VIJANDEN
+        self.shoot_cooldown = 0
+        self.switch_cooldown = 0
+        
+        self.projectiles = []
         self.enemies = []
+        self.teachers = []
+        self.items = [] 
+        
+        self.zombie_spawn_timer = config.ZOMBIE_SPAWN_RATE
 
-        # Startpositie
+        self.cleared_rooms = [] 
+        self.current_room_id = None 
+        self.saved_position = None  
+        self.saved_map_name = "ground"
+
+        self.state = "PLAYING" 
+        self.cutscene_timer = 0
+        self.active_teacher = None
+        self.popup_message = None 
+        self.popup_timer = 0
+
         self.load_map("ground") 
         self.player_rect.x = 4 * self.tile_size
         self.player_rect.y = 25 * self.tile_size
@@ -23,32 +56,44 @@ class Game:
         self.current_map_name = map_name
         self.map_data_original = maps.ALL_MAPS[map_name]
         
-        # We maken een nieuwe lijst voor map_data, omdat we de 'Z's eruit gaan halen
         self.map_data = []
-        self.enemies = [] # Lijst leegmaken bij nieuwe map
+        self.enemies = []
+        self.teachers = []
+        self.items = []
         
         max_width = 0
-        
         for row_idx, row_string in enumerate(self.map_data_original):
             if len(row_string) > max_width: max_width = len(row_string)
             
-            # Check of er een Z in deze rij staat
-            if 'Z' in row_string:
-                new_row = ""
-                for col_idx, char in enumerate(row_string):
-                    if char == 'Z':
-                        # MAAK ENEMY
-                        new_enemy = Enemy(
-                            col_idx * self.tile_size,
-                            row_idx * self.tile_size,
-                            self.map_data_original)
-                        self.enemies.append(new_enemy)
-                        new_row += "." # Vervang Z door vloer
-                    else:
-                        new_row += char
-                self.map_data.append(new_row)
-            else:
-                self.map_data.append(row_string)
+            new_row = ""
+            for col_idx, char in enumerate(row_string):
+                if char == 'Z':
+                    self.enemies.append(Enemy(col_idx * self.tile_size, row_idx * self.tile_size, self.map_data_original))
+                    new_row += "."
+                elif char == 'T':
+                    if self.current_room_id in self.cleared_rooms: pass 
+                    else: self.teachers.append(Teacher(col_idx * self.tile_size, row_idx * self.tile_size))
+                    new_row += "." 
+                elif char == 'b':
+                    new_row += "b"
+                elif char == 'B': # Student on Bench
+                    new_row += "B"
+                elif char == 'H':
+                    self.items.append(Item(col_idx * self.tile_size, row_idx * self.tile_size, "health"))
+                    new_row += "."
+                elif char == 'A':
+                    self.items.append(Item(col_idx * self.tile_size, row_idx * self.tile_size, "ammo"))
+                    new_row += "."
+                elif char == 'S':
+                    self.items.append(Item(col_idx * self.tile_size, row_idx * self.tile_size, "shotgun"))
+                    new_row += "."
+                elif char == 'K': 
+                    if not self.has_key:
+                        self.items.append(Item(col_idx * self.tile_size, row_idx * self.tile_size, "key"))
+                    new_row += "."
+                else:
+                    new_row += char
+            self.map_data.append(new_row)
 
         self.map_pixel_width = max_width * self.tile_size
         self.map_pixel_height = len(self.map_data) * self.tile_size
@@ -60,71 +105,233 @@ class Game:
                     return (col_idx - 1) * self.tile_size, row_idx * self.tile_size
         return 2 * self.tile_size, 2 * self.tile_size
 
+    def reset_game(self):
+        self.player_hp = config.PLAYER_HP_MAX
+        self.cleared_rooms = []
+        self.current_room_id = None
+        self.has_key = False 
+        
+        self.weapons_owned = ["pistol"]
+        self.current_weapon_index = 0
+        self.ammo["pistol"] = config.WEAPONS["pistol"]["start_ammo"]
+        self.ammo["shotgun"] = config.WEAPONS["shotgun"]["start_ammo"]
+        
+        self.load_map("ground")
+        self.player_rect.x = 4 * self.tile_size
+        self.player_rect.y = 25 * self.tile_size
+        self.state = "PLAYING"
+
+    def spawn_random_zombie(self):
+        if self.current_map_name not in ["ground", "first"]:
+            return
+
+        attempts = 0
+        while attempts < 10:
+            r_row = random.randint(0, len(self.map_data) - 1)
+            r_col = random.randint(0, len(self.map_data[0]) - 1)
+            
+            if self.map_data[r_row][r_col] == '.':
+                spawn_x = r_col * self.tile_size
+                spawn_y = r_row * self.tile_size
+                dist = ((spawn_x - self.player_rect.x)**2 + (spawn_y - self.player_rect.y)**2)**0.5
+                
+                if dist > 400: 
+                    self.enemies.append(Enemy(spawn_x, spawn_y, self.map_data_original))
+                    break
+            attempts += 1
+
     def handle_input(self):
         keys = pygame.key.get_pressed()
+
+        if keys[pygame.K_ESCAPE]:
+            self.state = "PAUSED"
+            return
+        if self.state == "PAUSED":
+            if keys[pygame.K_r]: self.state = "PLAYING" 
+            if keys[pygame.K_q]: pygame.quit(); exit()
+            return
+        if self.state == "GAMEOVER":
+            if keys[pygame.K_r]: self.reset_game()
+            if keys[pygame.K_q]: self.state = "MENU"; pygame.quit(); exit() 
+            return
+        if self.state == "CUTSCENE": 
+            if keys[pygame.K_SPACE] and self.cutscene_timer > 30:
+                self.end_cutscene_start_boss()
+            return
+
         dx = 0
         dy = 0
-
         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
             dx = -config.PLAYER_SPEED
             self.player_direction = "left"
         elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
             dx = config.PLAYER_SPEED
             self.player_direction = "right"
-
-        if keys[pygame.K_UP] or keys[pygame.K_w]:
+        elif keys[pygame.K_UP] or keys[pygame.K_w]:
             dy = -config.PLAYER_SPEED
             self.player_direction = "up"
         elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
             dy = config.PLAYER_SPEED
             self.player_direction = "down"
 
-        # Beweeg X
         self.player_rect.x += dx
         if self.check_wall_collision(): self.player_rect.x -= dx
-
-        # Beweeg Y
         self.player_rect.y += dy
         if self.check_wall_collision(): self.player_rect.y -= dy
             
-        self.player_rect.left = max(0, self.player_rect.left)
-        self.player_rect.right = min(self.map_pixel_width, self.player_rect.right)
-        self.player_rect.top = max(0, self.player_rect.top)
-        self.player_rect.bottom = min(self.map_pixel_height, self.player_rect.bottom)
+        if self.switch_cooldown > 0: self.switch_cooldown -= 1
+        if keys[pygame.K_g] and self.switch_cooldown == 0:
+            self.current_weapon_index += 1
+            if self.current_weapon_index >= len(self.weapons_owned):
+                self.current_weapon_index = 0
+            self.switch_cooldown = 20 
+
+        current_weapon = self.weapons_owned[self.current_weapon_index]
+        weapon_stats = config.WEAPONS[current_weapon]
+        
+        if self.shoot_cooldown > 0: self.shoot_cooldown -= 1
+        
+        if keys[pygame.K_SPACE] and self.shoot_cooldown == 0:
+            if self.ammo[current_weapon] > 0:
+                self.ammo[current_weapon] -= 1
+                offset_y = (config.PLAYER_VISUAL_SIZE - config.PLAYER_SIZE) // 2
+                bullet_y = self.player_rect.centery - offset_y 
+                bullet = Projectile(self.player_rect.centerx, bullet_y, self.player_direction, current_weapon)
+                self.projectiles.append(bullet)
+                self.shoot_cooldown = weapon_stats["cooldown"]
+
+        if pygame.mouse.get_pressed()[0]: 
+            self.check_teacher_click()
+            
+        for item in self.items[:]:
+            if self.player_rect.colliderect(item.rect):
+                if item.item_type == "health":
+                    self.player_hp = min(config.PLAYER_HP_MAX, self.player_hp + config.HEALTH_REGEN)
+                    self.items.remove(item)
+                elif item.item_type == "ammo":
+                    self.ammo["pistol"] += config.AMMO_PACK_AMOUNT
+                    if "shotgun" in self.weapons_owned:
+                         self.ammo["shotgun"] += 2
+                    self.items.remove(item)
+                elif item.item_type == "shotgun":
+                    if "shotgun" not in self.weapons_owned:
+                        self.weapons_owned.append("shotgun")
+                    self.ammo["shotgun"] += config.SHOTGUN_AMMO_AMOUNT
+                    self.items.remove(item)
+                elif item.item_type == "key": 
+                    self.has_key = True
+                    self.show_popup_message("SLEUTEL GEVONDEN!")
+                    self.items.remove(item)
 
         self.check_events()
         
-        # UPDATE ALLE VIJANDEN
-        for e in self.enemies:
-            e.update(self.player_rect)
+        self.zombie_spawn_timer -= 1
+        if self.zombie_spawn_timer <= 0:
+            self.spawn_random_zombie()
+            self.zombie_spawn_timer = config.ZOMBIE_SPAWN_RATE
 
+        if self.player_invulnerable_timer > 0:
+            self.player_invulnerable_timer -= 1
+            
+        if self.popup_timer > 0:
+            self.popup_timer -= 1
 
-        keys = pygame.key.get_pressed()
+        for e in self.enemies: e.update(self.player_rect)
+        for p in self.projectiles: p.update()
+        self.handle_combat()
 
-        if keys[pygame.K_SPACE]:
+    def show_popup_message(self, msg):
+        self.popup_message = msg
+        self.popup_timer = 120 
+
+    def check_teacher_click(self):
+        mx, my = pygame.mouse.get_pos()
+        camera_x = max(0, min(self.player_rect.centerx - (config.SCREEN_WIDTH // 2), self.map_pixel_width - config.SCREEN_WIDTH))
+        camera_y = max(0, min(self.player_rect.centery - (config.SCREEN_HEIGHT // 2), self.map_pixel_height - config.SCREEN_HEIGHT))
+        world_mx = mx + camera_x
+        world_my = my + camera_y
+        
+        for teacher in self.teachers:
+            if not teacher.defeated and teacher.rect.collidepoint(world_mx, world_my):
+                self.start_cutscene(teacher)
+
+    def start_cutscene(self, teacher):
+        self.state = "CUTSCENE"
+        self.active_teacher = teacher
+        self.cutscene_timer = 0
+
+    def end_cutscene_start_boss(self):
+        self.state = "PLAYING"
+        if self.active_teacher:
+            boss_x = self.tile_size * 2
+            boss_y = self.tile_size * 2
+            
+            if self.player_rect.centerx < self.map_pixel_width // 2:
+                boss_x = self.map_pixel_width - (self.tile_size * 3)
+            else:
+                boss_x = self.tile_size * 3
+            if self.player_rect.centery < self.map_pixel_height // 2:
+                boss_y = self.map_pixel_height - (self.tile_size * 3)
+            
+            boss = Enemy(boss_x, boss_y, self.map_data_original, is_boss=True)
+            self.enemies.append(boss)
+            self.teachers.remove(self.active_teacher)
+
+    def handle_combat(self):
+        projectiles_to_keep = []
+        for p in self.projectiles:
+            if not p.active: continue
+
+            col = int(p.rect.centerx // self.tile_size)
+            row = int(p.rect.centery // self.tile_size)
+            hit_wall = False
+            if 0 <= row < len(self.map_data) and 0 <= col < len(self.map_data[row]):
+                tile = self.map_data[row][col]
+                if tile == 'W' or tile == 'b' or tile == 'L' or tile == 'B': # Kogels stoppen ook voor B
+                    hit_wall = True
+            if hit_wall: continue 
+
+            hit_enemy = False
             for e in self.enemies:
-                if not e.alive:
-                    continue
+                if not e.is_cured and p.rect.colliderect(e.rect):
+                    e.take_damage(p.damage)
+                    hit_enemy = True
+                    if e.is_cured and e.is_boss:
+                        self.cleared_rooms.append(self.current_room_id)
+                    break 
+            if not hit_enemy:
+                projectiles_to_keep.append(p)
+        self.projectiles = projectiles_to_keep
 
-                if self.player_rect.colliderect(e.rect):
-                    e.hp -= 10
-                    print("HIT! Enemy HP:", e.hp)
-
-                    if e.hp <= 0:
-                        print("ENEMY DEAD")
-                        e.alive = False
-
+        for e in self.enemies:
+            if not e.is_cured and e.rect.colliderect(self.player_rect):
+                if self.player_invulnerable_timer == 0:
+                    self.player_hp -= 10 
+                    self.player_invulnerable_timer = 60 
+                    if self.player_hp <= 0:
+                        self.state = "GAMEOVER"
 
     def check_wall_collision(self):
+        # 1. Check Muur & Deur & Bank collision
         points = [self.player_rect.topleft, self.player_rect.topright,
                   self.player_rect.bottomleft, self.player_rect.bottomright]
         for point in points:
             col = int(point[0] // self.tile_size)
             row = int(point[1] // self.tile_size)
+            if row < 0 or col < 0 or row >= len(self.map_data) or col >= len(self.map_data[0]):
+                return True
             if 0 <= row < len(self.map_data):
-                row_len = len(self.map_data[row])
-                if 0 <= col < row_len:
-                    if self.map_data[row][col] == 'W': return True
+                if 0 <= col < len(self.map_data[row]):
+                    tile = self.map_data[row][col]
+                    if tile == 'W' or tile == 'b': return True
+                    if tile == 'B': return True # Student Bench is hard
+                    if tile == 'L': return True
+        
+        # 2. Check Teacher collision
+        for t in self.teachers:
+            if self.player_rect.colliderect(t.rect.inflate(-10, -10)):
+                return True
+
         return False
 
     def check_events(self):
@@ -132,72 +339,249 @@ class Game:
         center_y = self.player_rect.centery
         col = int(center_x // self.tile_size)
         row = int(center_y // self.tile_size)
+        
+        neighbors = [
+             (row, col+1), (row, col-1), (row+1, col), (row-1, col)
+        ]
+        
+        for nr, nc in neighbors:
+            if 0 <= nr < len(self.map_data) and 0 <= nc < len(self.map_data[nr]):
+                if self.map_data[nr][nc] == 'L':
+                    door_rect = pygame.Rect(nc*self.tile_size, nr*self.tile_size, self.tile_size, self.tile_size)
+                    if self.player_rect.colliderect(door_rect.inflate(10, 10)):
+                        if self.has_key:
+                            self.saved_map_name = self.current_map_name
+                            self.saved_position = (self.player_rect.x, self.player_rect.y) 
+                            self.current_room_id = "director_room"
+                            self.load_map("director_room")
+                            self.player_rect.x = 9 * self.tile_size 
+                            self.player_rect.y = 13 * self.tile_size
+                            self.has_key = False 
+                            self.show_popup_message("DEUR GEOPEND!")
+                        else:
+                            if self.popup_timer == 0:
+                                self.show_popup_message("GESLOTEN! ZOEK SLEUTEL")
 
         if 0 <= row < len(self.map_data) and 0 <= col < len(self.map_data[row]):
             tile_char = self.map_data[row][col]
-            if tile_char == '>':
-                self.load_map("first")
-                new_x, new_y = self.find_spawn_point('<')
-                self.player_rect.x = new_x
-                self.player_rect.y = new_y
+            
+            if tile_char in ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']:
+                room_id = tile_char
+                if room_id not in self.cleared_rooms:
+                    self.saved_map_name = self.current_map_name
+                    self.saved_position = (self.player_rect.x, self.player_rect.y - 64) 
+                    self.current_room_id = room_id
+                    
+                    self.load_map("classroom")
+                    self.player_rect.x = 9 * self.tile_size 
+                    self.player_rect.y = 13 * self.tile_size
+            
+            elif tile_char == 'E':
+                if self.saved_map_name and self.saved_position is not None:
+                    self.load_map(self.saved_map_name)
+                    self.player_rect.x, self.player_rect.y = self.saved_position
+                    self.saved_position = None
+                    self.current_room_id = None
+                else:
+                    self.load_map("ground")
+                    self.player_rect.x = 4 * self.tile_size
+                    self.player_rect.y = 25 * self.tile_size
+            
+            elif tile_char == '>': 
+                if len(self.cleared_rooms) >= 1: 
+                    self.load_map("first")
+                    self.player_rect.topleft = self.find_spawn_point('<')
+                else:
+                     self.player_rect.x -= 10 
+
             elif tile_char == '<':
                 self.load_map("ground")
-                new_x, new_y = self.find_spawn_point('>')
-                self.player_rect.x = new_x
-                self.player_rect.y = new_y
+                self.player_rect.topleft = self.find_spawn_point('>')
 
     def draw(self):
         self.screen.fill(config.BLACK)
 
-        camera_x = self.player_rect.centerx - (config.SCREEN_WIDTH // 2)
-        camera_y = self.player_rect.centery - (config.SCREEN_HEIGHT // 2)
-        camera_x = max(0, min(camera_x, self.map_pixel_width - config.SCREEN_WIDTH))
-        camera_y = max(0, min(camera_y, self.map_pixel_height - config.SCREEN_HEIGHT))
+        camera_x = max(0, min(self.player_rect.centerx - (config.SCREEN_WIDTH // 2), self.map_pixel_width - config.SCREEN_WIDTH))
+        camera_y = max(0, min(self.player_rect.centery - (config.SCREEN_HEIGHT // 2), self.map_pixel_height - config.SCREEN_HEIGHT))
 
         start_col = int(camera_x // self.tile_size)
         end_col = start_col + (config.SCREEN_WIDTH // self.tile_size) + 2
         start_row = int(camera_y // self.tile_size)
         end_row = start_row + (config.SCREEN_HEIGHT // self.tile_size) + 2
 
-        # 1. MAP
+        # 1. VLOER
         for row in range(start_row, min(end_row, len(self.map_data))):
             current_row_len = len(self.map_data[row])
+            for col in range(start_col, min(end_col, current_row_len)):
+                x = (col * self.tile_size) - camera_x
+                y = (row * self.tile_size) - camera_y
+                if "floor" in config.ASSETS: self.screen.blit(config.ASSETS["floor"], (x, y))
+                else: pygame.draw.rect(self.screen, (100,100,100), (x, y, self.tile_size, self.tile_size))
+
+        # 2. ENTITEITEN & MUREN
+        entities_by_row = {}
+        
+        p_row = int(self.player_rect.centery // self.tile_size)
+        if p_row not in entities_by_row: entities_by_row[p_row] = []
+        entities_by_row[p_row].append("player")
+        
+        for e in self.enemies:
+            e_row = int(e.rect.centery // self.tile_size)
+            if e_row not in entities_by_row: entities_by_row[e_row] = []
+            entities_by_row[e_row].append(e)
+            
+        for t in self.teachers:
+            t_row = int(t.rect.centery // self.tile_size)
+            if t_row not in entities_by_row: entities_by_row[t_row] = []
+            entities_by_row[t_row].append(t)
+            
+        for i in self.items:
+            i_row = int(i.rect.centery // self.tile_size)
+            if i_row not in entities_by_row: entities_by_row[i_row] = []
+            entities_by_row[i_row].append(i)
+
+        for row in range(start_row, min(end_row, len(self.map_data))):
+            current_row_len = len(self.map_data[row])
+            
+            # A. Muren & Deuren
             for col in range(start_col, min(end_col, current_row_len)):
                 char = self.map_data[row][col]
                 x = (col * self.tile_size) - camera_x
                 y = (row * self.tile_size) - camera_y
 
-                if "floor" in config.ASSETS: self.screen.blit(config.ASSETS["floor"], (x, y))
-                else: pygame.draw.rect(self.screen, (100,100,100), (x, y, self.tile_size, self.tile_size))
+                if char == 'W':
+                    img = config.ASSETS.get("wall")
+                    if img: self.screen.blit(img, (x, y - (img.get_height() - self.tile_size)))
+                    else: pygame.draw.rect(self.screen, (50,50,50), (x, y, self.tile_size, self.tile_size))
+                elif char in ['1','2','3','4','5','6','7','8','9','0','E']: 
+                    img = config.ASSETS.get("door")
+                    if img: self.screen.blit(img, (x, y))
+                    else: pygame.draw.rect(self.screen, (0,0,255), (x, y, self.tile_size, self.tile_size))
+                    if char != 'E':
+                         font = pygame.font.Font(None, 36)
+                         text = font.render(char, True, (255,255,255))
+                         self.screen.blit(text, (x+20, y+20))
+                
+                # LOCKED DOOR
+                elif char == 'L':
+                    img = config.ASSETS.get("locked_door")
+                    if img: self.screen.blit(img, (x, y))
+                    else: pygame.draw.rect(self.screen, (255,0,0), (x, y, self.tile_size, self.tile_size))
+                
+                elif char == 'b':
+                     pygame.draw.rect(self.screen, (139, 69, 19), (x + 5, y + 20, 54, 40)) 
+                elif char == 'B':
+                     img = config.ASSETS.get("student_bench")
+                     if img: self.screen.blit(img, (x, y))
+                elif (char == '>' or char == '<'): 
+                    img = config.ASSETS.get("stairs")
+                    if img: self.screen.blit(img, (x, y))
+            
+            # B. Entiteiten
+            if row in entities_by_row:
+                for entity in entities_by_row[row]:
+                    if entity == "player":
+                        if self.player_invulnerable_timer % 10 < 5: 
+                            player_draw_x = self.player_rect.x - camera_x
+                            player_draw_y = self.player_rect.y - camera_y
+                            if "player_sprites" in config.ASSETS and config.ASSETS["player_sprites"]:
+                                sprite = config.ASSETS["player_sprites"][self.player_direction]
+                                offset_x = (config.PLAYER_VISUAL_SIZE - config.PLAYER_SIZE) // 2
+                                offset_y = config.PLAYER_VISUAL_SIZE - config.PLAYER_SIZE
+                                self.screen.blit(sprite, (player_draw_x - offset_x, player_draw_y - offset_y))
+                            else:
+                                pygame.draw.rect(self.screen, config.PLAYER_COLOR, (player_draw_x, player_draw_y, config.PLAYER_SIZE, config.PLAYER_SIZE))
+                    else:
+                        entity.draw(self.screen, camera_x, camera_y)
 
-                img = None
-                if char == 'W': 
-                    if "wall" in config.ASSETS: img = config.ASSETS["wall"]
-                    else: pygame.draw.rect(self.screen, (50,50,50), (x,y, self.tile_size, self.tile_size))
-                elif char == 'D': 
-                    if "door" in config.ASSETS: img = config.ASSETS["door"]
-                    else: pygame.draw.rect(self.screen, (0,0,255), (x,y, self.tile_size, self.tile_size))
-                elif char == '>' or char == '<': 
-                    if "stairs" in config.ASSETS: img = config.ASSETS["stairs"]
-                    else: pygame.draw.rect(self.screen, (255,255,0), (x,y, self.tile_size, self.tile_size))
+        # 3. PROJECTIELEN
+        for p in self.projectiles: p.draw(self.screen, camera_x, camera_y)
 
-                if img: self.screen.blit(img, (x, y))
+        # 4. HUD
+        bar_width = 200
+        hp_percent = self.player_hp / config.PLAYER_HP_MAX
+        pygame.draw.rect(self.screen, (50, 50, 50), (20, 20, bar_width, 25))
+        hp_color = (0, 255, 0)
+        if hp_percent < 0.5: hp_color = (255, 165, 0)
+        if hp_percent < 0.2: hp_color = (255, 0, 0)
+        pygame.draw.rect(self.screen, hp_color, (20, 20, bar_width * hp_percent, 25))
+        pygame.draw.rect(self.screen, (255, 255, 255), (20, 20, bar_width, 25), 3)
 
-        # 2. VIJANDEN (NIEUW)
-        for e in self.enemies:
-            e.draw(self.screen, camera_x, camera_y)
+        curr_wep = self.weapons_owned[self.current_weapon_index]
+        curr_ammo = self.ammo[curr_wep]
+        font = pygame.font.Font(None, 36)
+        
+        wep_text = font.render(f"Wapen: {config.WEAPONS[curr_wep]['name']} (G)", True, (255, 255, 255))
+        self.screen.blit(wep_text, (20, 60))
+        
+        ammo_color = (255, 255, 255)
+        if curr_ammo == 0: ammo_color = (255, 0, 0)
+        ammo_text = font.render(f"Ammo: {curr_ammo}", True, ammo_color)
+        self.screen.blit(ammo_text, (20, 90))
 
-        # 3. SPELER
-        player_draw_x = self.player_rect.x - camera_x
-        player_draw_y = self.player_rect.y - camera_y
+        # Sleutel Icoon
+        if self.has_key:
+            pygame.draw.rect(self.screen, (255, 215, 0), (20, 130, 40, 40)) # Goud blokje
+            key_text = font.render("SLEUTEL", True, (255, 215, 0))
+            self.screen.blit(key_text, (70, 138))
 
-        if "player_sprites" in config.ASSETS and config.ASSETS["player_sprites"]:
-            direction = self.player_direction 
-            sprite_to_draw = config.ASSETS["player_sprites"][direction]
-            offset_x = (config.PLAYER_VISUAL_SIZE - config.PLAYER_SIZE) // 2
-            offset_y = config.PLAYER_VISUAL_SIZE - config.PLAYER_SIZE
-            self.screen.blit(sprite_to_draw, (player_draw_x - offset_x, player_draw_y - offset_y))
-        else:
-            pygame.draw.rect(self.screen, config.PLAYER_COLOR, (player_draw_x, player_draw_y, config.PLAYER_SIZE, config.PLAYER_SIZE))
+        # 5. POP-UP BERICHTEN (Zoals "Sleutel gevonden")
+        if self.popup_timer > 0:
+            msg_surf = font.render(self.popup_message, True, (255, 255, 255))
+            msg_rect = msg_surf.get_rect(center=(config.SCREEN_WIDTH//2, config.SCREEN_HEIGHT - 100))
+            bg_rect = msg_rect.inflate(20, 10)
+            pygame.draw.rect(self.screen, (0,0,0), bg_rect)
+            pygame.draw.rect(self.screen, (255,255,255), bg_rect, 2)
+            self.screen.blit(msg_surf, msg_rect)
+
+        if self.state == "CUTSCENE":
+            self.draw_overlay_rect()
+            font = pygame.font.Font(None, 32)
+            lines = ["LERAAR (Bezeten): MWUHAHA!", "(Druk op SPATIE om te vechten)"]
+            for i, line in enumerate(lines):
+                text = font.render(line, True, (255, 255, 255))
+                self.screen.blit(text, (70, config.SCREEN_HEIGHT - 130 + i*30))
+            self.cutscene_timer += 1
+
+        elif self.state == "PAUSED":
+            self.draw_popup("PAUZE", ["R - Verder spelen", "Q - Stoppen"], (40, 40, 60))
+
+        elif self.state == "GAMEOVER":
+            self.draw_popup("GAME OVER", ["R - Opnieuw proberen", "Q - Afsluiten"], (60, 20, 20))
 
         pygame.display.flip()
+
+    def draw_overlay_rect(self):
+        pygame.draw.rect(self.screen, (0, 0, 0), (50, config.SCREEN_HEIGHT - 160, config.SCREEN_WIDTH - 100, 150))
+        pygame.draw.rect(self.screen, (255, 255, 255), (50, config.SCREEN_HEIGHT - 160, config.SCREEN_WIDTH - 100, 150), 3)
+
+    def draw_centered_text(self, text, y_offset, color=(255, 255, 255), size=48):
+        font = pygame.font.Font(None, size)
+        surf = font.render(text, True, color)
+        rect = surf.get_rect(center=(config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 2 + y_offset))
+        self.screen.blit(surf, rect)
+
+    def draw_popup(self, title_text, options, bg_color):
+        overlay = pygame.Surface((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
+        overlay.set_alpha(150)
+        overlay.fill((0, 0, 0))
+        self.screen.blit(overlay, (0, 0))
+
+        box_w, box_h = 400, 300
+        box_x = (config.SCREEN_WIDTH - box_w) // 2
+        box_y = (config.SCREEN_HEIGHT - box_h) // 2
+
+        pygame.draw.rect(self.screen, (20, 20, 20), (box_x + 8, box_y + 8, box_w, box_h)) 
+        pygame.draw.rect(self.screen, bg_color, (box_x, box_y, box_w, box_h)) 
+        pygame.draw.rect(self.screen, (200, 200, 200), (box_x, box_y, box_w, box_h), 4) 
+
+        font_title = pygame.font.Font(None, 60)
+        title_surf = font_title.render(title_text, True, (255, 215, 0)) 
+        title_rect = title_surf.get_rect(center=(config.SCREEN_WIDTH // 2, box_y + 50))
+        self.screen.blit(title_surf, title_rect)
+
+        font_opt = pygame.font.Font(None, 36)
+        for i, opt in enumerate(options):
+            opt_surf = font_opt.render(opt, True, (255, 255, 255))
+            opt_rect = opt_surf.get_rect(center=(config.SCREEN_WIDTH // 2, box_y + 120 + (i * 50)))
+            self.screen.blit(opt_surf, opt_rect)
