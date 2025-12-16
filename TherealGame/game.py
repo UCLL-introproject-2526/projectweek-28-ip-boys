@@ -7,53 +7,67 @@ class Game:
         self.screen = screen
         self.tile_size = config.TILE_SIZE
         
+        # De hitbox blijft 40 (zodat je nergens vast komt te zitten)
         self.player_rect = pygame.Rect(0, 0, config.PLAYER_SIZE, config.PLAYER_SIZE)
-        
-        # NIEUW: We houden bij welke kant de speler op kijkt.
-        # We beginnen met naar beneden (voren) kijken.
         self.player_direction = "down" 
 
-        self.current_map_name = "ground"
-        self.load_map("ground", 4, 22) 
+        # Startpositie: We zoeken gewoon een lege plek op de map
+        self.load_map("ground") 
+        # Zet speler handmatig op een logische startplek (bijv in de inkomhal)
+        self.player_rect.x = 4 * self.tile_size
+        self.player_rect.y = 25 * self.tile_size
 
-    def load_map(self, map_name, start_tile_x, start_tile_y):
+    def load_map(self, map_name):
         self.current_map_name = map_name
         self.map_data = maps.ALL_MAPS[map_name]
         
+        # Bereken breedte/hoogte van de nieuwe map
         max_width = 0
         for row in self.map_data:
             if len(row) > max_width: max_width = len(row)
 
         self.map_pixel_width = max_width * self.tile_size
         self.map_pixel_height = len(self.map_data) * self.tile_size
+
+    def find_spawn_point(self, target_char):
+        """
+        Deze functie zoekt op de HUIDIGE map naar een specifiek teken (bijv '<' of '>')
+        en geeft de X en Y coördinaten terug.
+        """
+        for row_idx, row in enumerate(self.map_data):
+            for col_idx, char in enumerate(row):
+                if char == target_char:
+                    # We hebben de trap gevonden!
+                    # Zet de speler er iets NAAST (anders val je gelijk terug)
+                    return (col_idx - 1) * self.tile_size, row_idx * self.tile_size
         
-        self.player_rect.x = start_tile_x * self.tile_size
-        self.player_rect.y = start_tile_y * self.tile_size
+        # Als we niks vinden, zet speler op 2,2
+        return 2 * self.tile_size, 2 * self.tile_size
 
     def handle_input(self):
         keys = pygame.key.get_pressed()
         dx = 0
         dy = 0
 
-        # NIEUW: Als we een toets indrukken, veranderen we ook de 'player_direction'
         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
             dx = -config.PLAYER_SPEED
-            self.player_direction = "left" # Kijk naar links
-        elif keys[pygame.K_RIGHT] or keys[pygame.K_d]: # Gebruik elif zodat je niet links EN rechts tegelijk kijkt
+            self.player_direction = "left"
+        elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
             dx = config.PLAYER_SPEED
-            self.player_direction = "right" # Kijk naar rechts
+            self.player_direction = "right"
 
         if keys[pygame.K_UP] or keys[pygame.K_w]:
             dy = -config.PLAYER_SPEED
-            self.player_direction = "up" # Kijk naar boven/achteren
+            self.player_direction = "up"
         elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
             dy = config.PLAYER_SPEED
-            self.player_direction = "down" # Kijk naar beneden/voren
+            self.player_direction = "down"
 
-        # Beweging en botsingen (hetzelfde als eerst)
+        # Beweeg X
         self.player_rect.x += dx
         if self.check_wall_collision(): self.player_rect.x -= dx
 
+        # Beweeg Y
         self.player_rect.y += dy
         if self.check_wall_collision(): self.player_rect.y -= dy
             
@@ -83,23 +97,31 @@ class Game:
         col = int(center_x // self.tile_size)
         row = int(center_y // self.tile_size)
 
-        if 0 <= row < len(self.map_data):
-            if 0 <= col < len(self.map_data[row]):
-                tile_char = self.map_data[row][col]
+        if 0 <= row < len(self.map_data) and 0 <= col < len(self.map_data[row]):
+            tile_char = self.map_data[row][col]
             
-                if tile_char == '>':
-                    print("Trap omhoog!")
-                    self.load_map("first", 77, 22) 
-                elif tile_char == '<':
-                    print("Trap omlaag!")
-                    self.load_map("ground", 77, 22) 
+            # === DE AUTOMATISCHE TRAP LOGICA ===
+            if tile_char == '>':
+                print("Trap omhoog! Zoeken naar '<' op map 'first'...")
+                self.load_map("first")
+                # Zoek waar de trap naar beneden staat, en zet de speler daar
+                new_x, new_y = self.find_spawn_point('<')
+                self.player_rect.x = new_x
+                self.player_rect.y = new_y
+                
+            elif tile_char == '<':
+                print("Trap omlaag! Zoeken naar '>' op map 'ground'...")
+                self.load_map("ground")
+                # Zoek waar de trap naar boven staat, en zet de speler daar
+                new_x, new_y = self.find_spawn_point('>')
+                self.player_rect.x = new_x
+                self.player_rect.y = new_y
 
     def draw(self):
         self.screen.fill(config.BLACK)
 
         camera_x = self.player_rect.centerx - (config.SCREEN_WIDTH // 2)
         camera_y = self.player_rect.centery - (config.SCREEN_HEIGHT // 2)
-        
         camera_x = max(0, min(camera_x, self.map_pixel_width - config.SCREEN_WIDTH))
         camera_y = max(0, min(camera_y, self.map_pixel_height - config.SCREEN_HEIGHT))
 
@@ -108,7 +130,7 @@ class Game:
         start_row = int(camera_y // self.tile_size)
         end_row = start_row + (config.SCREEN_HEIGHT // self.tile_size) + 2
 
-        # 1. TEKEN DE MAP
+        # 1. MAP
         for row in range(start_row, min(end_row, len(self.map_data))):
             current_row_len = len(self.map_data[row])
             for col in range(start_col, min(end_col, current_row_len)):
@@ -116,11 +138,9 @@ class Game:
                 x = (col * self.tile_size) - camera_x
                 y = (row * self.tile_size) - camera_y
 
-                # Vloer tekenen (als fallback of ondergrond)
                 if "floor" in config.ASSETS: self.screen.blit(config.ASSETS["floor"], (x, y))
                 else: pygame.draw.rect(self.screen, (100,100,100), (x, y, self.tile_size, self.tile_size))
 
-                # Objecten tekenen
                 img = None
                 if char == 'W': 
                     if "wall" in config.ASSETS: img = config.ASSETS["wall"]
@@ -134,19 +154,20 @@ class Game:
 
                 if img: self.screen.blit(img, (x, y))
 
-        # 2. TEKEN DE SPELER (NIEUW!)
+        # 2. SPELER
         player_draw_x = self.player_rect.x - camera_x
         player_draw_y = self.player_rect.y - camera_y
 
-        # Check of de sprites geladen zijn
         if "player_sprites" in config.ASSETS and config.ASSETS["player_sprites"]:
-            # NIEUW: Kies het juiste plaatje op basis van de richting
             direction = self.player_direction 
             sprite_to_draw = config.ASSETS["player_sprites"][direction]
-            self.screen.blit(sprite_to_draw, (player_draw_x, player_draw_y))
+            
+            # Centreer de grote sprite over de kleine hitbox
+            offset_x = (config.PLAYER_VISUAL_SIZE - config.PLAYER_SIZE) // 2
+            offset_y = config.PLAYER_VISUAL_SIZE - config.PLAYER_SIZE
+            
+            self.screen.blit(sprite_to_draw, (player_draw_x - offset_x, player_draw_y - offset_y))
         else:
-            # Fallback: Rood blokje als er iets mis is met de plaatjes
-            draw_rect = pygame.Rect(player_draw_x, player_draw_y, self.player_rect.width, self.player_rect.height)
-            pygame.draw.rect(self.screen, config.PLAYER_COLOR, draw_rect)
+            pygame.draw.rect(self.screen, config.PLAYER_COLOR, (player_draw_x, player_draw_y, config.PLAYER_SIZE, config.PLAYER_SIZE))
 
         pygame.display.flip()

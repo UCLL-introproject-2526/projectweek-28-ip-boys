@@ -90,5 +90,5 @@ def create_screen():
 
 # Speler instellingen
 PLAYER_SPEED = 4 
-PLAYER_SIZE = 125
+PLAYER_SIZE = 40
 PLAYER_VISUAL_SIZE = 125 # NIEUW: DIT IS JE PLAATJE (even groot als een tegel)
