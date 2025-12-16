@@ -96,7 +96,8 @@ class Game:
         
         # UPDATE ALLE VIJANDEN
         for e in self.enemies:
-            e.update()
+            e.update(self.player_rect)
+
 
         keys = pygame.key.get_pressed()
 

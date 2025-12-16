@@ -8,6 +8,8 @@ class Enemy:
         self.map_data = map_data
         self.hp = 30
         self.alive = True
+        self.chase_radius = 200  # pixels
+
         
         # Beweging
         self.speed = config.ENEMY_SPEED
@@ -31,25 +33,43 @@ class Enemy:
         # Loop tussen de 30 en 120 frames (0.5 tot 2 seconden) deze kant op
         self.move_timer = random.randint(30, 120)
 
-    def update(self):
-        """Update positie (wordt elke frame aangeroepen)"""
-        self.move_timer -= 1
-        
-        # Tijd op? Nieuwe richting kiezen
-        if self.move_timer <= 0:
-            self.change_direction()
+    def update(self, player_rect):
+        if not self.alive:
+            return
 
-        # Beweeg X
-        self.rect.x += self.direction[0]
-        if self.check_collision():
-            self.rect.x -= self.direction[0] # Stap terug
-            self.change_direction() # Meteen omdraaien
+    # --- Afstand tot speler ---
+        dx = player_rect.centerx - self.rect.centerx
+        dy = player_rect.centery - self.rect.centery
+        distance = (dx ** 2 + dy ** 2) ** 0.5
 
-        # Beweeg Y
-        self.rect.y += self.direction[1]
+    # --- CHASE MODE ---
+        if distance < self.chase_radius:
+            # Normaliseer richting
+            if distance != 0:
+                dx /= distance
+                dy /= distance
+
+            move_x = dx * self.speed
+            move_y = dy * self.speed
+
+    # --- RANDOM MODE ---
+        else:
+            self.move_timer -= 1
+            if self.move_timer <= 0:
+                self.change_direction()
+
+            move_x = self.direction[0]
+            move_y = self.direction[1]
+
+    # --- Beweging + collision ---
+        self.rect.x += move_x
         if self.check_collision():
-            self.rect.y -= self.direction[1]
-            self.change_direction()
+            self.rect.x -= move_x
+
+        self.rect.y += move_y
+        if self.check_collision():
+            self.rect.y -= move_y
+
 
     def check_collision(self):
         """Check of enemy tegen muur loopt"""
