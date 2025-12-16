@@ -1,10 +1,9 @@
 import pygame
 import config
-
+import game
 
 def create_main_surface():
     return config.create_screen()
-
 
 def draw_menu(screen, background):
     screen.blit(background, (0, 0))
@@ -43,6 +42,9 @@ def main():
     running = True
     state = "MENU"
     start_button = None
+    
+    # ### NIEUW: Variabele voor de game instantie
+    game_instance = None 
 
     while running:
         for event in pygame.event.get():
@@ -53,17 +55,21 @@ def main():
                 if state == "MENU" and start_button:
                     if start_button.collidepoint(event.pos):
                         state = "GAME"
+                        # ### NIEUW: Start de game op het moment dat je klikt
+                        game_instance = game.Game(screen)
 
         if state == "MENU":
             start_button = draw_menu(screen, background)
 
         elif state == "GAME":
-            screen.fill(config.BLACK)
-            pygame.display.flip()
+            # ### NIEUW: Gebruik de logica uit game.py
+            if game_instance:
+                game_instance.handle_input()
+                game_instance.draw()
 
         clock.tick(60)
 
     pygame.quit()
 
-
-main()
+if __name__ == "__main__": # ### Best practice
+    main()
