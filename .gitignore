@@ -1,6 +1,6 @@
 *.jpg
 *.jpeg
-
+*.pyc
 *.wav
 *.mp3
 *.ogg
