@@ -31,3 +31,13 @@ def create_screen():
         return pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
     else:
         return pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+
+
+# Wereld instellingen (De map is groter dan het scherm!)
+MAP_WIDTH = 2000
+MAP_HEIGHT = 2000
+
+# Speler instellingen
+PLAYER_SPEED = 5
+PLAYER_SIZE = 40
+PLAYER_COLOR = (255, 0, 0) # Rood
