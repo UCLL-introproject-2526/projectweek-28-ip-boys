@@ -120,10 +120,16 @@ class Game:
                 x = (col * self.tile_size) - camera_x
                 y = (row * self.tile_size) - camera_y
 
+<<<<<<< HEAD
                 color = config.GRAY
                 if char == 'W': color = config.DARK_GRAY
                 elif char == 'D': color = config.BLUE
                 elif char == '>' or char == '<': color = config.YELLOW
+=======
+                # Vloer tekenen (als fallback of ondergrond)
+                if "floor" in config.ASSETS: self.screen.blit(config.ASSETS["floor"], (x, y))
+                else: pygame.draw.rect(self.screen, (100,100,100), (x, y, self.tile_size, self.tile_size))
+>>>>>>> a26f9a11d13b2b8bb1fed8334c3abde421a06e76
 
                 pygame.draw.rect(self.screen, color, (x, y, self.tile_size, self.tile_size))
                 pygame.draw.rect(self.screen, (30, 30, 30), (x, y, self.tile_size, self.tile_size), 1)
