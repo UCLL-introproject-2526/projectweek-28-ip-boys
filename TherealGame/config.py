@@ -89,6 +89,15 @@ def create_screen():
         return pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 # Speler instellingen
+<<<<<<< HEAD
 PLAYER_SPEED = 4 
 PLAYER_SIZE = 40
 PLAYER_VISUAL_SIZE = 120 # NIEUW: DIT IS JE PLAATJE (even groot als een tegel)
+=======
+PLAYER_SPEED = 4 # Iets langzamer voor preciezere beweging
+PLAYER_SIZE = 40 # Iets kleiner dan de TILE_SIZE zodat je makkelijk door deuren past
+PLAYER_COLOR = (255, 0, 0)
+
+
+
+>>>>>>> e5c5492f288df5311fc0b810c68700be973df898

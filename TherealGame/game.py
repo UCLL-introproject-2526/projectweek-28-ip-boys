@@ -1,11 +1,18 @@
 import pygame
 import config
 import UCLL_maps as maps
+import os
 
 class Game:
     def __init__(self, screen):
         self.screen = screen
         self.tile_size = config.TILE_SIZE
+        base_path = os.path.dirname(__file__)
+        raw_wall = pygame.image.load(
+        os.path.join(base_path, "images", "wall.png")).convert_alpha()
+        self.wall_image = pygame.transform.scale(
+        raw_wall, (self.tile_size, self.tile_size)
+)
         
         self.player_rect = pygame.Rect(0, 0, config.PLAYER_SIZE, config.PLAYER_SIZE)
         
@@ -116,9 +123,19 @@ class Game:
                 x = (col * self.tile_size) - camera_x
                 y = (row * self.tile_size) - camera_y
 
+<<<<<<< HEAD
                 # Vloer tekenen (als fallback of ondergrond)
                 if "floor" in config.ASSETS: self.screen.blit(config.ASSETS["floor"], (x, y))
                 else: pygame.draw.rect(self.screen, (100,100,100), (x, y, self.tile_size, self.tile_size))
+=======
+                color = config.GRAY
+                if char == 'W':
+                    self.screen.blit(self.wall_image, (x, y))
+                    continue  # belangrijk
+
+                elif char == 'D': color = config.BLUE
+                elif char == '>' or char == '<': color = config.YELLOW
+>>>>>>> e5c5492f288df5311fc0b810c68700be973df898
 
                 # Objecten tekenen
                 img = None
@@ -150,3 +167,5 @@ class Game:
             pygame.draw.rect(self.screen, config.PLAYER_COLOR, draw_rect)
 
         pygame.display.flip()
+
+
