@@ -41,3 +41,6 @@ def create_screen():
 PLAYER_SPEED = 4 # Iets langzamer voor preciezere beweging
 PLAYER_SIZE = 40 # Iets kleiner dan de TILE_SIZE zodat je makkelijk door deuren past
 PLAYER_COLOR = (255, 0, 0)
+
+
+

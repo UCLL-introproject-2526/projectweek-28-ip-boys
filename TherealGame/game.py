@@ -147,3 +147,5 @@ class Game:
         pygame.draw.rect(self.screen, config.PLAYER_COLOR, draw_rect)
 
         pygame.display.flip()
+
+
