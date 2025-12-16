@@ -1,5 +1,8 @@
 import pygame
 import config
+FLOOR_COLOR_1 = (60, 60, 60)
+FLOOR_COLOR_2 = (50, 50, 50)
+TILE_SIZE = 100
 
 class Game:
     def __init__(self, screen):
@@ -70,5 +73,129 @@ class Game:
             self.player_rect.height
         )
         pygame.draw.rect(self.screen, config.PLAYER_COLOR, draw_rect)
+
+        pygame.display.flip()
+
+        import pygame
+import config
+
+class Game:
+    def __init__(self, screen):
+        self.screen = screen
+
+        # 🌍 Wereld
+        self.MAP_WIDTH = 2000
+        self.MAP_HEIGHT = 2000
+
+        # 🔴 Speler
+        self.player_rect = pygame.Rect(
+            1000, 1000, config.PLAYER_SIZE, config.PLAYER_SIZE
+        )
+
+        wall_thickness = 20  # dikke schoolmuur
+
+        # ✅ DIT MOET HIER STAAN
+        self.walls = [
+            # BOVEN
+            pygame.Rect(0, 0, self.MAP_WIDTH, wall_thickness),
+
+            # ONDER
+            pygame.Rect(
+                0,
+                self.MAP_HEIGHT - wall_thickness,
+                self.MAP_WIDTH,
+                wall_thickness
+            ),
+
+            # LINKS
+            pygame.Rect(0, 0, wall_thickness, self.MAP_HEIGHT),
+
+            # RECHTS
+            pygame.Rect(
+                self.MAP_WIDTH - wall_thickness,
+                0,
+                wall_thickness,
+                self.MAP_HEIGHT
+            ),
+        ]
+
+    def handle_input(self):
+        keys = pygame.key.get_pressed()
+        dx = dy = 0
+
+        if keys[pygame.K_a] or keys[pygame.K_LEFT]:
+            dx -= config.PLAYER_SPEED
+        if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+            dx += config.PLAYER_SPEED
+        if keys[pygame.K_w] or keys[pygame.K_UP]:
+            dy -= config.PLAYER_SPEED
+        if keys[pygame.K_s] or keys[pygame.K_DOWN]:
+            dy += config.PLAYER_SPEED
+
+        self.move_and_collide(dx, dy)
+
+    def move_and_collide(self, dx, dy):
+        # X-as
+        self.player_rect.x += dx
+        for wall in self.walls:
+            if self.player_rect.colliderect(wall):
+                if dx > 0:
+                    self.player_rect.right = wall.left
+                elif dx < 0:
+                    self.player_rect.left = wall.right
+
+        # Y-as
+        self.player_rect.y += dy
+        for wall in self.walls:
+            if self.player_rect.colliderect(wall):
+                if dy > 0:
+                    self.player_rect.bottom = wall.top
+                elif dy < 0:
+                    self.player_rect.top = wall.bottom
+
+    def draw(self):
+        # 🎥 Camera
+        camera_x = self.player_rect.centerx - config.SCREEN_WIDTH // 2
+        camera_y = self.player_rect.centery - config.SCREEN_HEIGHT // 2
+
+        camera_x = max(0, min(camera_x, self.MAP_WIDTH - config.SCREEN_WIDTH))
+        camera_y = max(0, min(camera_y, self.MAP_HEIGHT - config.SCREEN_HEIGHT))
+
+        # achtergrond
+        self.screen.fill((0, 0, 0))
+
+        # grid
+        grid = 100
+        for x in range(0, self.MAP_WIDTH, grid):
+            pygame.draw.line(
+                self.screen, (40, 40, 40),
+                (x - camera_x, 0 - camera_y),
+                (x - camera_x, self.MAP_HEIGHT - camera_y)
+            )
+        for y in range(0, self.MAP_HEIGHT, grid):
+            pygame.draw.line(
+                self.screen, (40, 40, 40),
+                (0 - camera_x, y - camera_y),
+                (self.MAP_WIDTH - camera_x, y - camera_y)
+            )
+
+        # muren tekenen
+        for wall in self.walls:
+            draw_wall = pygame.Rect(
+                wall.x - camera_x,
+                wall.y - camera_y,
+                wall.width,
+                wall.height
+            )
+            pygame.draw.rect(self.screen, (220, 220, 220), draw_wall)
+
+        # speler
+        draw_player = pygame.Rect(
+            self.player_rect.x - camera_x,
+            self.player_rect.y - camera_y,
+            self.player_rect.width,
+            self.player_rect.height
+        )
+        pygame.draw.rect(self.screen, config.PLAYER_COLOR, draw_player)
 
         pygame.display.flip()
