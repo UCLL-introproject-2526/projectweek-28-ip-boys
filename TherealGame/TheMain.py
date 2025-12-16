@@ -1,5 +1,6 @@
 import pygame
 import config
+import os
 import game
 
 def create_main_surface():
@@ -32,7 +33,11 @@ def main():
 
     config.load_assets()
 
-    background = pygame.image.load(config.MENU_BACKGROUND)
+    if os.path.exists(config.MENU_BACKGROUND):
+        background = pygame.image.load(config.MENU_BACKGROUND)
+    else:
+        background = pygame.Surface((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
+        background.fill(config.WHITE)
 
     if not config.FULLSCREEN:
         background = pygame.transform.scale(
@@ -45,7 +50,6 @@ def main():
     state = "MENU"
     start_button = None
     
-    # ### NIEUW: Variabele voor de game instantie
     game_instance = None 
 
     while running:
@@ -57,14 +61,12 @@ def main():
                 if state == "MENU" and start_button:
                     if start_button.collidepoint(event.pos):
                         state = "GAME"
-                        # ### NIEUW: Start de game op het moment dat je klikt
                         game_instance = game.Game(screen)
 
         if state == "MENU":
             start_button = draw_menu(screen, background)
 
         elif state == "GAME":
-            # ### NIEUW: Gebruik de logica uit game.py
             if game_instance:
                 game_instance.handle_input()
                 game_instance.draw()
@@ -73,6 +75,5 @@ def main():
 
     pygame.quit()
 
-if __name__ == "__main__": # ### Best practice
+if __name__ == "__main__": 
     main()
-    

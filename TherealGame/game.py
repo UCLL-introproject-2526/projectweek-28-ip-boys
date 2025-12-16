@@ -1,48 +1,60 @@
 import pygame
 import config
 import UCLL_maps as maps
+import enemy # NIEUWE IMPORT
 
 class Game:
     def __init__(self, screen):
         self.screen = screen
         self.tile_size = config.TILE_SIZE
         
-        # De hitbox blijft 40 (zodat je nergens vast komt te zitten)
         self.player_rect = pygame.Rect(0, 0, config.PLAYER_SIZE, config.PLAYER_SIZE)
         self.player_direction = "down" 
 
-        # Startpositie: We zoeken gewoon een lege plek op de map
+        # LIJST VOOR VIJANDEN
+        self.enemies = []
+
+        # Startpositie
         self.load_map("ground") 
-        # Zet speler handmatig op een logische startplek (bijv in de inkomhal)
         self.player_rect.x = 4 * self.tile_size
         self.player_rect.y = 25 * self.tile_size
 
     def load_map(self, map_name):
         self.current_map_name = map_name
-        self.map_data = maps.ALL_MAPS[map_name]
+        self.map_data_original = maps.ALL_MAPS[map_name]
         
-        # Bereken breedte/hoogte van de nieuwe map
+        # We maken een nieuwe lijst voor map_data, omdat we de 'Z's eruit gaan halen
+        self.map_data = []
+        self.enemies = [] # Lijst leegmaken bij nieuwe map
+        
         max_width = 0
-        for row in self.map_data:
-            if len(row) > max_width:
-                max_width = len(row)
+        
+        for row_idx, row_string in enumerate(self.map_data_original):
+            if len(row_string) > max_width: max_width = len(row_string)
+            
+            # Check of er een Z in deze rij staat
+            if 'Z' in row_string:
+                new_row = ""
+                for col_idx, char in enumerate(row_string):
+                    if char == 'Z':
+                        # MAAK ENEMY
+                        new_enemy = enemy.Enemy(col_idx * self.tile_size, row_idx * self.tile_size, self.map_data_original)
+                        self.enemies.append(new_enemy)
+                        new_row += "." # Vervang Z door vloer
+                    else:
+                        new_row += char
+                self.map_data.append(new_row)
+            else:
+                self.map_data.append(row_string)
 
         self.map_pixel_width = max_width * self.tile_size
         self.map_pixel_height = len(self.map_data) * self.tile_size
 
     def find_spawn_point(self, target_char):
-        """
-        Deze functie zoekt op de HUIDIGE map naar een specifiek teken (bijv '<' of '>')
-        en geeft de X en Y coördinaten terug.
-        """
         for row_idx, row in enumerate(self.map_data):
             for col_idx, char in enumerate(row):
                 if char == target_char:
-                    # We hebben de trap gevonden!
-                    # Zet de speler er iets NAAST (anders val je gelijk terug)
                     return (col_idx - 1) * self.tile_size, row_idx * self.tile_size
-        
-        # Als we niks vinden, zet speler op 2,2
         return 2 * self.tile_size, 2 * self.tile_size
 
     def handle_input(self):
@@ -79,10 +91,9 @@ class Game:
 
         self.check_events()
         
-        # DEBUG: Haal hekje weg als je coördinaten wilt zien in de console
-        # grid_x = int(self.player_rect.centerx // self.tile_size)
-        # grid_y = int(self.player_rect.centery // self.tile_size)
-        # print(f"Speler positie: {grid_x}, {grid_y}") 
+        # UPDATE ALLE VIJANDEN
+        for e in self.enemies:
+            e.update()
 
     def check_wall_collision(self):
         points = [self.player_rect.topleft, self.player_rect.topright,
@@ -90,8 +101,6 @@ class Game:
         for point in points:
             col = int(point[0] // self.tile_size)
             row = int(point[1] // self.tile_size)
-            
-            # Veilige check: bestaat deze rij en kolom wel?
             if 0 <= row < len(self.map_data):
                 row_len = len(self.map_data[row])
                 if 0 <= col < row_len:
@@ -106,20 +115,13 @@ class Game:
 
         if 0 <= row < len(self.map_data) and 0 <= col < len(self.map_data[row]):
             tile_char = self.map_data[row][col]
-            
-            # === DE AUTOMATISCHE TRAP LOGICA ===
             if tile_char == '>':
-                print("Trap omhoog! Zoeken naar '<' op map 'first'...")
                 self.load_map("first")
-                # Zoek waar de trap naar beneden staat, en zet de speler daar
                 new_x, new_y = self.find_spawn_point('<')
                 self.player_rect.x = new_x
                 self.player_rect.y = new_y
-                
             elif tile_char == '<':
-                print("Trap omlaag! Zoeken naar '>' op map 'ground'...")
                 self.load_map("ground")
-                # Zoek waar de trap naar boven staat, en zet de speler daar
                 new_x, new_y = self.find_spawn_point('>')
                 self.player_rect.x = new_x
                 self.player_rect.y = new_y
@@ -139,12 +141,7 @@ class Game:
 
         # 1. MAP
         for row in range(start_row, min(end_row, len(self.map_data))):
-            
-            # --- DE FIX ---
-            # We kijken hoe lang DEZE specifieke regel is
             current_row_len = len(self.map_data[row])
-            
-            # We tekenen alleen kolommen die bestaan in deze regel
             for col in range(start_col, min(end_col, current_row_len)):
                 char = self.map_data[row][col]
                 x = (col * self.tile_size) - camera_x
@@ -166,18 +163,19 @@ class Game:
 
                 if img: self.screen.blit(img, (x, y))
 
-        # 2. SPELER
+        # 2. VIJANDEN (NIEUW)
+        for e in self.enemies:
+            e.draw(self.screen, camera_x, camera_y)
+
+        # 3. SPELER
         player_draw_x = self.player_rect.x - camera_x
         player_draw_y = self.player_rect.y - camera_y
 
         if "player_sprites" in config.ASSETS and config.ASSETS["player_sprites"]:
             direction = self.player_direction 
             sprite_to_draw = config.ASSETS["player_sprites"][direction]
-            
-            # Centreer de grote sprite over de kleine hitbox
             offset_x = (config.PLAYER_VISUAL_SIZE - config.PLAYER_SIZE) // 2
             offset_y = config.PLAYER_VISUAL_SIZE - config.PLAYER_SIZE
-            
             self.screen.blit(sprite_to_draw, (player_draw_x - offset_x, player_draw_y - offset_y))
         else:
             pygame.draw.rect(self.screen, config.PLAYER_COLOR, (player_draw_x, player_draw_y, config.PLAYER_SIZE, config.PLAYER_SIZE))
