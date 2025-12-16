@@ -30,6 +30,8 @@ def main():
     screen = create_main_surface()
     pygame.display.set_caption("Campus Creatures")
 
+    config.load_assets()
+
     background = pygame.image.load(config.MENU_BACKGROUND)
 
     if not config.FULLSCREEN:
