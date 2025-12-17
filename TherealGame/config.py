@@ -4,9 +4,9 @@ import pygame
 # =========================
 # SCREEN CONFIG
 # =========================
-SCREEN_WIDTH = 1280
-SCREEN_HEIGHT = 720
-FULLSCREEN = True
+SCREEN_WIDTH = 1024
+SCREEN_HEIGHT = 768
+FULLSCREEN = False
 
 # =========================
 # GAME SETTINGS
@@ -14,11 +14,34 @@ FULLSCREEN = True
 TILE_SIZE = 64
 WALL_HEIGHT = 128 
 
-# SPELER
+# MOEILIJKHEIDSGRADEN
+DIFFICULTY_SETTINGS = {
+    "EASY": {
+        "spawn_rate": 450,
+        "darkness": False,
+        "color": (0, 255, 0)
+    },
+    "NORMAL": {
+        "spawn_rate": 300,
+        "darkness": False,
+        "color": (255, 255, 0)
+    },
+    "HARD": {
+        "spawn_rate": 120,
+        "darkness": True, 
+        "color": (255, 0, 0)
+    }
+}
+
+# SPELER & XP [AANGEPAST]
 PLAYER_SPEED = 4
-PLAYER_SIZE = 64        
-PLAYER_VISUAL_SIZE = 125 
+PLAYER_SIZE = 60         # TERUGGEZET: Hitbox is klein (past door deuren)
+PLAYER_VISUAL_SIZE = 125 # GROOT: Plaatje blijft indrukwekkend
 PLAYER_HP_MAX = 100
+
+XP_PER_ZOMBIE = 10      
+BASE_ATTACK_DAMAGE = 15 
+DAMAGE_PER_XP = 0.5     
 
 # WAPENS & MUNITIE
 WEAPONS = {
@@ -49,9 +72,9 @@ SHOTGUN_AMMO_AMOUNT = 5
 
 # VIJAND
 ENEMY_SPEED = 2
-ENEMY_SIZE = 64
+ENEMY_SIZE = 64         # OOK TERUG: Monsters moeten ook door deuren kunnen
 BOSS_SIZE = 128
-BOSS_HP = 100
+BOSS_HP = 500
 NORMAL_HP = 30
 ZOMBIE_SPAWN_RATE = 300 
 
@@ -68,12 +91,21 @@ BUTTON_COLOR = (50, 50, 50)
 HIGHLIGHT_COLOR = (255, 215, 0)   
 TEXT_COLOR = (255, 255, 255)
 
+# POKEMON BATTLE COLORS
+BATTLE_BG = (240, 240, 240)
+BATTLE_BOX = (40, 50, 60)
+BATTLE_TEXT = (255, 255, 255)
+HP_BAR_BG = (100, 100, 100)
+HP_BAR_GOOD = (20, 200, 50)
+HP_BAR_LOW = (200, 150, 20)
+HP_BAR_CRIT = (200, 20, 20)
+
 # =========================
 # PATHS
 # =========================
 BASE_PATH = os.path.dirname(__file__)
 IMAGE_PATH = os.path.join(BASE_PATH, "images")
-SAVE_FILE = os.path.join(BASE_PATH, "savegame.json") # NIEUW: Opslagbestand
+SAVE_FILE = os.path.join(BASE_PATH, "savegame.json")
 
 if os.path.exists(os.path.join(IMAGE_PATH, "Poster_loadingScreen.png")):
     MENU_BACKGROUND = os.path.join(IMAGE_PATH, "Poster_loadingScreen.png")
@@ -143,13 +175,20 @@ def load_assets():
     ASSETS["player_sprites"]["walk_down_r"] = load_smart("player_walking_down_rightfoot", PLAYER_VISUAL_SIZE, PLAYER_VISUAL_SIZE, PLAYER_COLOR)
 
     # NPC & ENEMY
-    monster_right = load_smart("monster", ENEMY_SIZE, ENEMY_SIZE, GREEN)
+    # Monster VISUEEL groot laden (125), maar hitbox is 64
+    monster_right = load_smart("monster", 125, 125, GREEN) 
     ASSETS["enemy_right"] = monster_right
     ASSETS["enemy_left"] = pygame.transform.flip(monster_right, True, False)
     ASSETS["enemy"] = monster_right 
 
-    ASSETS["boss"] = load_smart("boss", BOSS_SIZE, BOSS_SIZE, (100, 0, 100))
+    ASSETS["boss"] = load_smart("boss", 250, 250, (100, 0, 100)) # Extra grote boss voor battle
     ASSETS["teacher"] = load_smart("teacher", TILE_SIZE, TILE_SIZE, WHITE)
+    
+    if os.path.exists(os.path.join(IMAGE_PATH, "player_up.png")):
+        ASSETS["player_back"] = load_smart("player_up", 200, 200, PLAYER_COLOR)
+    else:
+        ASSETS["player_back"] = load_smart("player_down", 200, 200, PLAYER_COLOR)
+
     ASSETS["player_monster"] = load_smart("player_monster", PLAYER_VISUAL_SIZE, PLAYER_VISUAL_SIZE, (50, 0, 0))
 
     # OMGEVING
@@ -169,12 +208,5 @@ def load_assets():
     print("[KLAAR] Assets geladen!")
 
 def create_screen():
-    if FULLSCREEN:
-        return pygame.display.set_mode(
-            (SCREEN_WIDTH, SCREEN_HEIGHT),
-            pygame.FULLSCREEN | pygame.SCALED
-        )
-    else:
-        return pygame.display.set_mode(
-            (SCREEN_WIDTH, SCREEN_HEIGHT)
-        )
+    if FULLSCREEN: return pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+    else: return pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))

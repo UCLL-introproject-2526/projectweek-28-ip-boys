@@ -3,44 +3,37 @@ import config
 import os
 import story
 import game
+import battle # NIEUW
 
 def create_main_surface():
     return config.create_screen()
 
 def draw_menu(screen, background, options, selected_index):
-    # Teken achtergrond
     screen.blit(background, (0, 0))
-
-    # Instellingen voor de knoppen
-    button_width = 300
+    button_width = 400
     button_height = 60
     spacing = 20
-    start_y = config.SCREEN_HEIGHT - (len(options) * (button_height + spacing)) - 50
+    total_height = len(options) * (button_height + spacing)
+    start_y = (config.SCREEN_HEIGHT - total_height) // 2 + 50 
     center_x = config.SCREEN_WIDTH // 2
 
     buttons_rects = []
-
     font = pygame.font.Font(None, 48)
 
     for i, option_text in enumerate(options):
-        # Bereken positie
         y = start_y + (i * (button_height + spacing))
         rect = pygame.Rect(center_x - (button_width // 2), y, button_width, button_height)
         buttons_rects.append(rect)
 
-        # Kleur bepalen: Geselecteerd = HIGHLIGHT, anders = BUTTON_COLOR
         if i == selected_index:
             color = config.HIGHLIGHT_COLOR
-            text_col = (0, 0, 0) # Zwarte tekst op lichte knop
+            text_col = (0, 0, 0) 
             pygame.draw.rect(screen, (255, 255, 255), rect.inflate(6, 6), border_radius=12)
         else:
             color = config.BUTTON_COLOR
             text_col = config.TEXT_COLOR
 
-        # Teken de knop
         pygame.draw.rect(screen, color, rect, border_radius=10)
-
-        # Teken de tekst
         text_surf = font.render(option_text, True, text_col)
         text_rect = text_surf.get_rect(center=rect.center)
         screen.blit(text_surf, text_rect)
@@ -56,7 +49,6 @@ def main():
 
     config.load_assets()
 
-    # Achtergrond laden
     if os.path.exists(config.MENU_BACKGROUND):
         background = pygame.image.load(config.MENU_BACKGROUND)
     else:
@@ -64,79 +56,107 @@ def main():
         background.fill(config.WHITE)
 
     background = pygame.transform.scale(
-    background,
-    (config.SCREEN_WIDTH, config.SCREEN_HEIGHT)
-)
-
+        background,
+        (config.SCREEN_WIDTH, config.SCREEN_HEIGHT)
+    )
 
     clock = pygame.time.Clock()
     running = True
     
-    # STATUS VARIABELEN
     state = "MENU"
     story_instance = None
     game_instance = None 
+    battle_instance = None # NIEUW
     
-    # MENU OPTIES
-    menu_options = ["Continue", "New Game", "Backstory", "Quit"]
-    selected_index = 1 # Start standaard op "New Game"
+    main_menu_index = 1 
+    settings_menu_index = 0
     
+    difficulties = ["EASY", "NORMAL", "HARD"]
+    current_difficulty_index = 1 
+    is_fullscreen = config.FULLSCREEN
+
     next_state_after_story = "GAME"
 
     while running:
+        # MENU OPTIES
+        main_options = ["Continue", "New Game", "Settings", "Backstory", "Quit"]
+        diff_name = difficulties[current_difficulty_index]
+        scr_name = "ON" if is_fullscreen else "OFF"
+        settings_options = [
+            f"Difficulty: {diff_name}", 
+            f"Fullscreen: {scr_name}", 
+            "Back"
+        ]
+
+        # LOOP VOOR INPUT EVENTS (BELANGRIJK: Slechts 1 loop per frame)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
 
-            # --- INPUT IN MENU ---
             if state == "MENU":
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_UP or event.key == pygame.K_w:
-                        selected_index = (selected_index - 1) % len(menu_options)
+                        main_menu_index = (main_menu_index - 1) % len(main_options)
                     elif event.key == pygame.K_DOWN or event.key == pygame.K_s:
-                        selected_index = (selected_index + 1) % len(menu_options)
-                    
+                        main_menu_index = (main_menu_index + 1) % len(main_options)
                     elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
-                        choice = menu_options[selected_index]
-                        
+                        choice = main_options[main_menu_index]
                         if choice == "Continue":
                             if os.path.exists(config.SAVE_FILE):
                                 state = "GAME"
                                 game_instance = game.Game(screen, load_saved=True)
-                            else:
-                                print("[INFO] Geen savegame gevonden!")
-                        
+                            else: print("[INFO] Geen savegame gevonden!")
                         elif choice == "New Game":
                             state = "STORY"
                             next_state_after_story = "GAME"
                             story_instance = story.Story(screen)
                             game_instance = None 
-                        
+                        elif choice == "Settings":
+                            state = "SETTINGS"
+                            settings_menu_index = 0
                         elif choice == "Backstory":
                             state = "STORY"
                             next_state_after_story = "MENU"
                             story_instance = story.Story(screen)
-                        
-                        elif choice == "Quit":
-                            running = False
+                        elif choice == "Quit": running = False
 
-            # --- INPUT IN STORY ---
+            elif state == "SETTINGS":
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_UP or event.key == pygame.K_w:
+                        settings_menu_index = (settings_menu_index - 1) % len(settings_options)
+                    elif event.key == pygame.K_DOWN or event.key == pygame.K_s:
+                        settings_menu_index = (settings_menu_index + 1) % len(settings_options)
+                    elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE or event.key == pygame.K_RIGHT:
+                        if settings_menu_index == 0:
+                            current_difficulty_index = (current_difficulty_index + 1) % len(difficulties)
+                        elif settings_menu_index == 1:
+                            is_fullscreen = not is_fullscreen
+                            config.FULLSCREEN = is_fullscreen
+                            if is_fullscreen: screen = pygame.display.set_mode((config.SCREEN_WIDTH, config.SCREEN_HEIGHT), pygame.FULLSCREEN)
+                            else: screen = pygame.display.set_mode((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
+                            background = pygame.transform.scale(background, (config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
+                        elif settings_menu_index == 2: state = "MENU"
+                    elif event.key == pygame.K_ESCAPE: state = "MENU"
+
             elif state == "STORY" and story_instance:
                 if event.type == pygame.MOUSEBUTTONDOWN or (event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT):
                     story_instance.handle_click()
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     state = next_state_after_story
                     if state == "GAME" and game_instance is None:
-                        game_instance = game.Game(screen)
+                        game_instance = game.Game(screen, difficulty=difficulties[current_difficulty_index])
 
-            # --- INPUT IN GAME ---
-            elif state == "GAME" and game_instance:
-                pass 
+            # GAME en BATTLE handelen input zelf af in hun loop, 
+            # maar we moeten hier de QUIT events niet 'opeten' voor hun neus.
+            # Oplossing: Game en Battle gebruiken pygame.key.get_pressed() intern, 
+            # of we geven de event door. Hier gebruiken we get_pressed in game.py, dus dit is ok.
 
-
-        # --- DRAW LOOP ---
+        # --- UPDATE & DRAW ---
         if state == "MENU":
-            draw_menu(screen, background, menu_options, selected_index)
+            draw_menu(screen, background, main_options, main_menu_index)
+
+        elif state == "SETTINGS":
+            draw_menu(screen, background, settings_options, settings_menu_index)
 
         elif state == "STORY":
             if story_instance:
@@ -144,17 +164,37 @@ def main():
                 if story_instance.finished():
                     state = next_state_after_story
                     if state == "GAME":
-                        game_instance = game.Game(screen)
+                        game_instance = game.Game(screen, difficulty=difficulties[current_difficulty_index])
 
         elif state == "GAME":
             if game_instance:
                 game_instance.handle_input()
                 game_instance.draw()
                 
-                # Terug naar menu als game stopt
                 if game_instance.state == "MENU":
                     state = "MENU"
                     game_instance = None 
+                
+                # CHECK VOOR BATTLE SWITCH
+                if game_instance.trigger_battle:
+                    state = "BATTLE"
+                    # Maak battle aan met huidige HP en XP
+                    battle_instance = battle.PokemonBattle(screen, game_instance.player_hp, game_instance.player_xp)
+                    game_instance = None # Pauzeer/Stop de main game
+
+        elif state == "BATTLE":
+            if battle_instance:
+                battle_instance.handle_input()
+                battle_instance.update()
+                battle_instance.draw()
+                
+                if battle_instance.state == "WIN":
+                    # Hier zou je naar credits kunnen gaan
+                    if battle_instance.timer < 0 and pygame.key.get_pressed()[pygame.K_RETURN]:
+                         state = "MENU" # Terug naar menu na winst
+                elif battle_instance.state == "LOSE":
+                    if battle_instance.timer < 0 and pygame.key.get_pressed()[pygame.K_RETURN]:
+                         state = "MENU"
 
         clock.tick(60)
 

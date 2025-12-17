@@ -8,10 +8,11 @@ from enemy import Enemy
 from projectile import Projectile
 from npc import Teacher
 from item import Item
-from particle import Particle # <--- NIEUW: Importeer je nieuwe file
+from particle import Particle
+import battle 
 
 class Game:
-    def __init__(self, screen, load_saved=False):
+    def __init__(self, screen, load_saved=False, difficulty="NORMAL"):
         self.screen = screen
         self.tile_size = config.TILE_SIZE
         
@@ -21,11 +22,26 @@ class Game:
         
         self.player_direction = "down"
         
+        # XP SYSTEM
+        self.player_xp = 0
+        
+        # BATTLE TRIGGER
+        self.trigger_battle = False 
+        
+        # DIFFICULTY
+        self.difficulty = difficulty
+        settings = config.DIFFICULTY_SETTINGS.get(difficulty, config.DIFFICULTY_SETTINGS["NORMAL"])
+        self.zombie_spawn_rate = settings["spawn_rate"] 
+        self.darkness_enabled = settings["darkness"]    
+        
         # ANIMATIE
         self.is_moving = False
         self.animation_timer = 0
         self.animation_speed = 10 
         self.animation_frame = 0 
+        
+        # SCREEN SHAKE
+        self.screen_shake = 0 
         
         # INVENTORY
         self.weapons_owned = ["pistol"] 
@@ -43,11 +59,9 @@ class Game:
         self.enemies = []
         self.teachers = []
         self.items = [] 
-        
-        # NIEUW: Lijst voor bloedspetters
         self.particles = [] 
         
-        self.zombie_spawn_timer = config.ZOMBIE_SPAWN_RATE
+        self.zombie_spawn_timer = self.zombie_spawn_rate
 
         self.cleared_rooms = [] 
         self.current_room_id = None 
@@ -60,7 +74,12 @@ class Game:
         self.popup_message = None 
         self.popup_timer = 0
 
-        # SAVE/LOAD LOGICA
+        # LIGHTING
+        self.night_surface = pygame.Surface((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
+        self.ambient_light = (10, 10, 20) 
+        self.flashlight_radius = 250      
+
+        # SAVE/LOAD
         if load_saved and os.path.exists(config.SAVE_FILE):
             self.load_game()
         else:
@@ -68,10 +87,14 @@ class Game:
             self.player_rect.x = 4 * self.tile_size
             self.player_rect.y = 25 * self.tile_size
 
+    def add_screen_shake(self, amount):
+        self.screen_shake = max(self.screen_shake, amount)
+
     def save_game(self):
-        """Slaat alle belangrijke speldata op in een JSON bestand."""
         data = {
+            "difficulty": self.difficulty,
             "player_hp": self.player_hp,
+            "player_xp": self.player_xp,
             "player_x": self.player_rect.x,
             "player_y": self.player_rect.y,
             "current_map_name": self.current_map_name,
@@ -92,12 +115,18 @@ class Game:
             print(f"[FOUT] Kon spel niet opslaan: {e}")
 
     def load_game(self):
-        """Laadt de speldata uit het JSON bestand."""
         try:
             with open(config.SAVE_FILE, 'r') as f:
                 data = json.load(f)
             
+            self.difficulty = data.get("difficulty", self.difficulty)
+            settings = config.DIFFICULTY_SETTINGS.get(self.difficulty, config.DIFFICULTY_SETTINGS["NORMAL"])
+            self.zombie_spawn_rate = settings["spawn_rate"]
+            self.darkness_enabled = settings["darkness"]
+
             self.player_hp = data.get("player_hp", 100)
+            self.player_xp = data.get("player_xp", 0)
+            
             self.current_map_name = data.get("current_map_name", "ground")
             self.weapons_owned = data.get("weapons_owned", ["pistol"])
             self.current_weapon_index = data.get("current_weapon_index", 0)
@@ -108,7 +137,6 @@ class Game:
             self.saved_map_name = data.get("saved_map_name", "ground")
             self.current_room_id = data.get("current_room_id", None)
             
-            # Eerst map laden, dan positie zetten
             self.load_map(self.current_map_name)
             self.player_rect.x = data.get("player_x", 4 * config.TILE_SIZE)
             self.player_rect.y = data.get("player_y", 25 * config.TILE_SIZE)
@@ -116,7 +144,7 @@ class Game:
             print("[INFO] Spel geladen!")
         except Exception as e:
             print(f"[FOUT] Kon savefile niet laden: {e}")
-            self.load_map("ground") # Fallback
+            self.load_map("ground") 
 
     def load_map(self, map_name):
         self.current_map_name = map_name
@@ -126,8 +154,6 @@ class Game:
         self.enemies = []
         self.teachers = []
         self.items = []
-        # Particles wissen bij nieuwe map? Of laten liggen?
-        # Laten we ze wissen voor performance
         self.particles = []
         
         max_width = 0
@@ -176,6 +202,7 @@ class Game:
 
     def reset_game(self):
         self.player_hp = config.PLAYER_HP_MAX
+        self.player_xp = 0 
         self.cleared_rooms = []
         self.current_room_id = None
         self.has_key = False 
@@ -280,6 +307,12 @@ class Game:
         if keys[pygame.K_SPACE] and self.shoot_cooldown == 0:
             if self.ammo[current_weapon] > 0:
                 self.ammo[current_weapon] -= 1
+                
+                if current_weapon == "shotgun":
+                    self.add_screen_shake(10)
+                else:
+                    self.add_screen_shake(2)
+                
                 offset_y = (config.PLAYER_VISUAL_SIZE - config.PLAYER_SIZE) // 2
                 bullet_y = self.player_rect.centery - offset_y 
                 bullet = Projectile(self.player_rect.centerx, bullet_y, self.player_direction, current_weapon)
@@ -315,7 +348,7 @@ class Game:
         self.zombie_spawn_timer -= 1
         if self.zombie_spawn_timer <= 0:
             self.spawn_random_zombie()
-            self.zombie_spawn_timer = config.ZOMBIE_SPAWN_RATE
+            self.zombie_spawn_timer = self.zombie_spawn_rate
 
         if self.player_invulnerable_timer > 0:
             self.player_invulnerable_timer -= 1
@@ -326,7 +359,6 @@ class Game:
         for e in self.enemies: e.update(self.player_rect)
         for p in self.projectiles: p.update()
         
-        # NIEUW: Update particles en verwijder dode
         for p in self.particles[:]:
             p.update()
             if p.lifetime <= 0:
@@ -355,46 +387,30 @@ class Game:
         self.cutscene_timer = 0
 
     def end_cutscene_start_boss(self):
-        self.state = "PLAYING"
+        # HIER IS DE CHECK: FINAL BOSS VS NORMALE BOSS
         if self.active_teacher:
-            boss_tiles_w = (config.BOSS_SIZE // self.tile_size) + 1
-            boss_tiles_h = (config.BOSS_SIZE // self.tile_size) + 1
-            valid_spawns = []
+            self.teachers.remove(self.active_teacher) # Haal leraar weg van de kaart
             
-            rows = len(self.map_data)
-            for r in range(rows - boss_tiles_h):
-                cols = len(self.map_data[r])
-                for c in range(cols - boss_tiles_w):
-                    is_safe_spot = True
-                    for br in range(boss_tiles_h):
-                        for bc in range(boss_tiles_w):
-                            if r+br >= rows or c+bc >= len(self.map_data[r+br]):
-                                is_safe_spot = False
-                                break
-                            if self.map_data[r+br][c+bc] != '.': 
-                                is_safe_spot = False
-                                break
-                        if not is_safe_spot: break
-                    
-                    if is_safe_spot:
-                        x = c * self.tile_size
-                        y = r * self.tile_size
-                        dist = ((x - self.player_rect.x)**2 + (y - self.player_rect.y)**2)**0.5
-                        if dist > 200:
-                            valid_spawns.append((x, y, dist))
-            
-            boss_x, boss_y = 0, 0
-            if valid_spawns:
-                valid_spawns.sort(key=lambda s: s[2], reverse=True)
-                boss_x, boss_y, _ = valid_spawns[0]
-                print(f"Boss spawned op veilige plek: {boss_x}, {boss_y}")
+            # Check of dit de Director Room is (Final Boss)
+            if self.current_map_name == "director_room":
+                print("[INFO] Start Final Pokémon Battle!")
+                self.state = "BATTLE_START" 
+                self.trigger_battle = True 
             else:
+                # Normale Boss: Spawn hem op de plek van de leraar
+                print(f"[INFO] Start Normale Boss Fight in {self.current_map_name}")
+                self.state = "PLAYING"
+                # Spawn de boss op de plek van de leraar (gebruik oude coords)
                 boss_x = self.active_teacher.rect.x
                 boss_y = self.active_teacher.rect.y
-
-            boss = Enemy(boss_x, boss_y, self.map_data_original, is_boss=True)
-            self.enemies.append(boss)
-            self.teachers.remove(self.active_teacher)
+                
+                # Maak een boss enemy aan
+                # We gebruiken config.BOSS_SIZE zodat hij groot is, maar niet "schermvullend" groot zoals in battle
+                boss = Enemy(boss_x, boss_y, self.map_data_original, is_boss=True)
+                
+                # Geef hem wat extra HP (maar niet zoveel als de final boss in battle)
+                boss.hp = 200 # Bijv. 200 HP voor mid-game bosses
+                self.enemies.append(boss)
 
     def handle_combat(self):
         projectiles_to_keep = []
@@ -416,13 +432,15 @@ class Game:
                     e.take_damage(p.damage)
                     hit_enemy = True
                     
-                    # NIEUW: SPAWN PARTICLES (BLOED)
-                    for _ in range(12): # 12 bloeddruppels
+                    for _ in range(12): 
                         self.particles.append(Particle(e.rect.centerx, e.rect.centery, (200, 0, 0)))
 
-                    if e.is_cured and e.is_boss:
-                        self.cleared_rooms.append(self.current_room_id)
-                        self.save_game()
+                    if e.is_cured:
+                        self.player_xp += config.XP_PER_ZOMBIE
+                        if e.is_boss:
+                            # Dit gebeurt alleen voor de normale bosses die je neerschiet
+                            self.cleared_rooms.append(self.current_room_id)
+                            self.save_game()
                     break 
             if not hit_enemy:
                 projectiles_to_keep.append(p)
@@ -433,6 +451,8 @@ class Game:
                 if self.player_invulnerable_timer == 0:
                     self.player_hp -= 10 
                     self.player_invulnerable_timer = 60 
+                    self.add_screen_shake(15) 
+                    
                     if self.player_hp <= 0:
                         self.state = "GAMEOVER"
 
@@ -473,7 +493,7 @@ class Game:
                             self.current_room_id = "director_room"
                             self.load_map("director_room")
                             self.player_rect.x = 9 * self.tile_size 
-                            self.player_rect.y = 13 * self.tile_size
+                            self.player_rect.y = 12 * self.tile_size # Reset naar normale spawnplek nu hitbox klein is
                             self.has_key = False 
                             self.show_popup_message("DEUR GEOPEND!")
                             self.save_game()
@@ -492,7 +512,7 @@ class Game:
                     self.current_room_id = room_id
                     self.load_map("classroom")
                     self.player_rect.x = 9 * self.tile_size 
-                    self.player_rect.y = 13 * self.tile_size
+                    self.player_rect.y = 12 * self.tile_size # Reset naar normale spawnplek
                     self.save_game()
             
             elif tile_char == 'E':
@@ -523,8 +543,18 @@ class Game:
     def draw(self):
         self.screen.fill(config.BLACK)
 
+        shake_x = 0
+        shake_y = 0
+        if self.screen_shake > 0:
+            shake_x = random.randint(-self.screen_shake, self.screen_shake)
+            shake_y = random.randint(-self.screen_shake, self.screen_shake)
+            self.screen_shake -= 1
+
         camera_x = max(0, min(self.player_rect.centerx - (config.SCREEN_WIDTH // 2), self.map_pixel_width - config.SCREEN_WIDTH))
         camera_y = max(0, min(self.player_rect.centery - (config.SCREEN_HEIGHT // 2), self.map_pixel_height - config.SCREEN_HEIGHT))
+        
+        camera_x += shake_x
+        camera_y += shake_y
 
         start_col = int(camera_x // self.tile_size)
         end_col = start_col + (config.SCREEN_WIDTH // self.tile_size) + 2
@@ -608,9 +638,7 @@ class Game:
                             player_draw_y = self.player_rect.y - camera_y
                             if "player_sprites" in config.ASSETS and config.ASSETS["player_sprites"]:
                                 
-                                # ANIMATIE LOGICA UPDATE (Left/Right + Up/Down)
                                 sprite_key = self.player_direction 
-                                
                                 if self.is_moving:
                                     if self.player_direction in ["up", "down"]:
                                         foot = "_l" if self.animation_frame == 0 else "_r"
@@ -620,7 +648,6 @@ class Game:
                                         sprite_key = "walk_" + self.player_direction
                                 
                                 sprite = config.ASSETS["player_sprites"].get(sprite_key, config.ASSETS["player_sprites"]["down"])
-                                
                                 offset_x = (config.PLAYER_VISUAL_SIZE - config.PLAYER_SIZE) // 2
                                 offset_y = config.PLAYER_VISUAL_SIZE - config.PLAYER_SIZE
                                 self.screen.blit(sprite, (player_draw_x - offset_x, player_draw_y - offset_y))
@@ -629,12 +656,22 @@ class Game:
                     else:
                         entity.draw(self.screen, camera_x, camera_y)
 
-        # 3. PROJECTIELEN
+        # 3. PROJECTIELEN & PARTICLES
         for p in self.projectiles: p.draw(self.screen, camera_x, camera_y)
-        
-        # 4. PARTICLES (bovenop alles!)
-        for p in self.particles:
-            p.draw(self.screen, camera_x, camera_y)
+        for p in self.particles: p.draw(self.screen, camera_x, camera_y)
+
+        # 4. LIGHTING SYSTEM
+        if self.darkness_enabled:
+            self.night_surface.fill(self.ambient_light)
+            
+            player_screen_x = self.player_rect.centerx - camera_x
+            player_screen_y = self.player_rect.centery - camera_y
+            
+            pygame.draw.circle(self.night_surface, (255, 255, 255), 
+                               (player_screen_x, player_screen_y), 
+                               self.flashlight_radius)
+            
+            self.screen.blit(self.night_surface, (0, 0), special_flags=pygame.BLEND_MULT)
 
         # 5. HUD
         bar_width = 200
@@ -657,14 +694,15 @@ class Game:
         if curr_ammo == 0: ammo_color = (255, 0, 0)
         ammo_text = font.render(f"Ammo: {curr_ammo}", True, ammo_color)
         self.screen.blit(ammo_text, (20, 90))
+        
+        xp_text = font.render(f"XP: {self.player_xp}", True, (50, 150, 255))
+        self.screen.blit(xp_text, (config.SCREEN_WIDTH - 150, 20))
 
-        # Sleutel Icoon
         if self.has_key:
-            pygame.draw.rect(self.screen, (255, 215, 0), (20, 130, 40, 40)) # Goud blokje
+            pygame.draw.rect(self.screen, (255, 215, 0), (20, 130, 40, 40)) 
             key_text = font.render("SLEUTEL", True, (255, 215, 0))
             self.screen.blit(key_text, (70, 138))
 
-        # 6. POP-UP BERICHTEN (Zoals "Sleutel gevonden")
         if self.popup_timer > 0:
             msg_surf = font.render(self.popup_message, True, (255, 255, 255))
             msg_rect = msg_surf.get_rect(center=(config.SCREEN_WIDTH//2, config.SCREEN_HEIGHT - 100))
