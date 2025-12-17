@@ -98,24 +98,43 @@ class Enemy:
             pygame.draw.circle(screen, (255, 200, 200), 
                              (draw_x + self.rect.width//2, draw_y + self.rect.height//2), 10)
         else:
+            # 1. TEKEN DE SPRITE
             if self.is_boss:
                 if "boss" in config.ASSETS:
                     screen.blit(config.ASSETS["boss"], (draw_x, draw_y))
                 else:
                     pygame.draw.rect(screen, (100, 0, 100), (draw_x, draw_y, self.rect.width, self.rect.height))
             else:
-                # STANDAARD VIJAND
-                # Kies sprite op basis van richting
+                # Standaard Vijand
                 sprite = None
                 if self.facing_right:
                     sprite = config.ASSETS.get("enemy_right")
                 else:
                     sprite = config.ASSETS.get("enemy_left")
                 
-                # Fallback
                 if not sprite: sprite = config.ASSETS.get("enemy")
 
                 if sprite:
                     screen.blit(sprite, (draw_x, draw_y))
                 else:
                     pygame.draw.rect(screen, (0, 255, 0), (draw_x, draw_y, self.rect.width, self.rect.height))
+
+            # 2. TEKEN DE HEALTH BAR (NIEUW!)
+            # We tekenen dit alleen als ze nog niet genezen zijn
+            max_hp = config.BOSS_HP if self.is_boss else config.NORMAL_HP
+            hp_percent = self.hp / max_hp
+            if hp_percent < 0: hp_percent = 0
+
+            bar_width = self.rect.width
+            bar_height = 8 # Hoogte van het balkje
+            
+            # Positie: 15 pixels boven de vijand
+            bar_x = draw_x
+            bar_y = draw_y - 15
+
+            # Achtergrond (Rood)
+            pygame.draw.rect(screen, (255, 0, 0), (bar_x, bar_y, bar_width, bar_height))
+            # Voorgrond (Groen)
+            pygame.draw.rect(screen, (0, 255, 0), (bar_x, bar_y, bar_width * hp_percent, bar_height))
+            # Zwart randje eromheen
+            pygame.draw.rect(screen, (0, 0, 0), (bar_x, bar_y, bar_width, bar_height), 1)
