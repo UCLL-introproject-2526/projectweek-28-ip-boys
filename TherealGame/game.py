@@ -18,6 +18,12 @@ class Game:
         
         self.player_direction = "down"
         
+        # ANIMATIE VARIABELEN
+        self.is_moving = False
+        self.animation_timer = 0
+        self.animation_speed = 10 
+        self.animation_frame = 0  
+        
         # INVENTORY
         self.weapons_owned = ["pistol"] 
         self.current_weapon_index = 0
@@ -76,7 +82,7 @@ class Game:
                     new_row += "." 
                 elif char == 'b':
                     new_row += "b"
-                elif char == 'B': # Student on Bench
+                elif char == 'B':
                     new_row += "B"
                 elif char == 'H':
                     self.items.append(Item(col_idx * self.tile_size, row_idx * self.tile_size, "health"))
@@ -161,18 +167,34 @@ class Game:
 
         dx = 0
         dy = 0
+        self.is_moving = False 
+
+        # BEWEGING
         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
             dx = -config.PLAYER_SPEED
             self.player_direction = "left"
+            self.is_moving = True
         elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
             dx = config.PLAYER_SPEED
             self.player_direction = "right"
+            self.is_moving = True
         elif keys[pygame.K_UP] or keys[pygame.K_w]:
             dy = -config.PLAYER_SPEED
             self.player_direction = "up"
+            self.is_moving = True
         elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
             dy = config.PLAYER_SPEED
             self.player_direction = "down"
+            self.is_moving = True
+
+        # Animatie Timer Update
+        if self.is_moving:
+            self.animation_timer += 1
+            if self.animation_timer >= self.animation_speed:
+                self.animation_timer = 0
+                self.animation_frame = 1 if self.animation_frame == 0 else 0
+        else:
+            self.animation_frame = 0 
 
         self.player_rect.x += dx
         if self.check_wall_collision(): self.player_rect.x -= dx
@@ -263,16 +285,42 @@ class Game:
     def end_cutscene_start_boss(self):
         self.state = "PLAYING"
         if self.active_teacher:
-            boss_x = self.tile_size * 2
-            boss_y = self.tile_size * 2
+            boss_tiles_w = (config.BOSS_SIZE // self.tile_size) + 1
+            boss_tiles_h = (config.BOSS_SIZE // self.tile_size) + 1
+            valid_spawns = []
             
-            if self.player_rect.centerx < self.map_pixel_width // 2:
-                boss_x = self.map_pixel_width - (self.tile_size * 3)
+            rows = len(self.map_data)
+            for r in range(rows - boss_tiles_h):
+                cols = len(self.map_data[r])
+                for c in range(cols - boss_tiles_w):
+                    is_safe_spot = True
+                    for br in range(boss_tiles_h):
+                        for bc in range(boss_tiles_w):
+                            if r+br >= rows or c+bc >= len(self.map_data[r+br]):
+                                is_safe_spot = False
+                                break
+                            if self.map_data[r+br][c+bc] != '.': 
+                                is_safe_spot = False
+                                break
+                        if not is_safe_spot: break
+                    
+                    if is_safe_spot:
+                        x = c * self.tile_size
+                        y = r * self.tile_size
+                        dist = ((x - self.player_rect.x)**2 + (y - self.player_rect.y)**2)**0.5
+                        if dist > 200:
+                            valid_spawns.append((x, y, dist))
+            
+            boss_x, boss_y = 0, 0
+            if valid_spawns:
+                valid_spawns.sort(key=lambda s: s[2], reverse=True)
+                boss_x, boss_y, _ = valid_spawns[0]
+                print(f"Boss spawned op veilige plek: {boss_x}, {boss_y}")
             else:
-                boss_x = self.tile_size * 3
-            if self.player_rect.centery < self.map_pixel_height // 2:
-                boss_y = self.map_pixel_height - (self.tile_size * 3)
-            
+                print("⚠️ Geen ruimte gevonden! Spawn op leraar.")
+                boss_x = self.active_teacher.rect.x
+                boss_y = self.active_teacher.rect.y
+
             boss = Enemy(boss_x, boss_y, self.map_data_original, is_boss=True)
             self.enemies.append(boss)
             self.teachers.remove(self.active_teacher)
@@ -287,7 +335,7 @@ class Game:
             hit_wall = False
             if 0 <= row < len(self.map_data) and 0 <= col < len(self.map_data[row]):
                 tile = self.map_data[row][col]
-                if tile == 'W' or tile == 'b' or tile == 'L' or tile == 'B': # Kogels stoppen ook voor B
+                if tile == 'W' or tile == 'b' or tile == 'L' or tile == 'B': 
                     hit_wall = True
             if hit_wall: continue 
 
@@ -312,7 +360,6 @@ class Game:
                         self.state = "GAMEOVER"
 
     def check_wall_collision(self):
-        # 1. Check Muur & Deur & Bank collision
         points = [self.player_rect.topleft, self.player_rect.topright,
                   self.player_rect.bottomleft, self.player_rect.bottomright]
         for point in points:
@@ -324,14 +371,11 @@ class Game:
                 if 0 <= col < len(self.map_data[row]):
                     tile = self.map_data[row][col]
                     if tile == 'W' or tile == 'b': return True
-                    if tile == 'B': return True # Student Bench is hard
+                    if tile == 'B': return True 
                     if tile == 'L': return True
-        
-        # 2. Check Teacher collision
         for t in self.teachers:
             if self.player_rect.colliderect(t.rect.inflate(-10, -10)):
                 return True
-
         return False
 
     def check_events(self):
@@ -340,10 +384,7 @@ class Game:
         col = int(center_x // self.tile_size)
         row = int(center_y // self.tile_size)
         
-        neighbors = [
-             (row, col+1), (row, col-1), (row+1, col), (row-1, col)
-        ]
-        
+        neighbors = [(row, col+1), (row, col-1), (row+1, col), (row-1, col)]
         for nr, nc in neighbors:
             if 0 <= nr < len(self.map_data) and 0 <= nc < len(self.map_data[nr]):
                 if self.map_data[nr][nc] == 'L':
@@ -371,7 +412,6 @@ class Game:
                     self.saved_map_name = self.current_map_name
                     self.saved_position = (self.player_rect.x, self.player_rect.y - 64) 
                     self.current_room_id = room_id
-                    
                     self.load_map("classroom")
                     self.player_rect.x = 9 * self.tile_size 
                     self.player_rect.y = 13 * self.tile_size
@@ -485,7 +525,16 @@ class Game:
                             player_draw_x = self.player_rect.x - camera_x
                             player_draw_y = self.player_rect.y - camera_y
                             if "player_sprites" in config.ASSETS and config.ASSETS["player_sprites"]:
-                                sprite = config.ASSETS["player_sprites"][self.player_direction]
+                                
+                                # ANIMATIE LOGICA UPDATE
+                                sprite_key = self.player_direction 
+                                
+                                # Als we bewegen én in animatie frame 1 zitten -> walk versie
+                                if self.is_moving and self.animation_frame == 1:
+                                    sprite_key = "walk_" + self.player_direction
+                                
+                                sprite = config.ASSETS["player_sprites"].get(sprite_key, config.ASSETS["player_sprites"]["down"])
+                                
                                 offset_x = (config.PLAYER_VISUAL_SIZE - config.PLAYER_SIZE) // 2
                                 offset_y = config.PLAYER_VISUAL_SIZE - config.PLAYER_SIZE
                                 self.screen.blit(sprite, (player_draw_x - offset_x, player_draw_y - offset_y))
