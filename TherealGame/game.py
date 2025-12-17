@@ -256,9 +256,8 @@ class Game:
             if keys[pygame.K_q]: self.state = "MENU"; pygame.quit(); exit() 
             return
         
-        # --- FIX: ONDERSTEUN OOK MUISKLIK IN CUTSCENE ---
+        # --- CUTSCENE LOGICA (VEILIGER GEMAAKT) ---
         if self.state == "CUTSCENE": 
-            # Wacht even (30 frames) zodat je niet per ongeluk dubbel klikt
             if self.cutscene_timer > 30:
                 if keys[pygame.K_SPACE] or mouse_clicked:
                     self.end_cutscene_start_boss()
@@ -382,7 +381,7 @@ class Game:
         self.popup_message = msg
         self.popup_timer = 120 
 
-    def check_teacher_click(self):#
+    def check_teacher_click(self):
         mx, my = pygame.mouse.get_pos()
         camera_x = max(0, min(self.player_rect.centerx - (config.SCREEN_WIDTH // 2), self.map_pixel_width - config.SCREEN_WIDTH))
         camera_y = max(0, min(self.player_rect.centery - (config.SCREEN_HEIGHT // 2), self.map_pixel_height - config.SCREEN_HEIGHT))
@@ -399,9 +398,11 @@ class Game:
         self.cutscene_timer = 0
 
     def end_cutscene_start_boss(self):
-        # --- FIX: ALLEEN FINAL BOSS TRIGGERT BATTLE ---
+        # --- FIX: CRASH PREVENTIE ---
         if self.active_teacher:
-            self.teachers.remove(self.active_teacher) # Verwijder leraar sprite
+            # Controleer of de teacher nog in de lijst zit VOORDAT we removen
+            if self.active_teacher in self.teachers:
+                self.teachers.remove(self.active_teacher)
             
             # Check of we in de director_room zijn (Map naam)
             if self.current_map_name == "director_room":
@@ -419,6 +420,9 @@ class Game:
                 boss = Enemy(boss_x, boss_y, self.map_data_original, is_boss=True)
                 boss.hp = 200 # Iets minder HP dan de final boss
                 self.enemies.append(boss)
+            
+            # BELANGRIJK: Reset de active_teacher variabele om herhaling te voorkomen
+            self.active_teacher = None
 
     def handle_combat(self):
         projectiles_to_keep = []
