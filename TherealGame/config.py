@@ -33,10 +33,10 @@ DIFFICULTY_SETTINGS = {
     }
 }
 
-# SPELER & XP [AANGEPAST]
+# SPELER & XP
 PLAYER_SPEED = 4
-PLAYER_SIZE = 60         # TERUGGEZET: Hitbox is klein (past door deuren)
-PLAYER_VISUAL_SIZE = 125 # GROOT: Plaatje blijft indrukwekkend
+PLAYER_SIZE = 60         
+PLAYER_VISUAL_SIZE = 125 
 PLAYER_HP_MAX = 100
 
 XP_PER_ZOMBIE = 10      
@@ -65,14 +65,15 @@ WEAPONS = {
 BULLET_SIZE = 8
 
 # ITEMS
-ITEM_SIZE = 40
+ITEM_SIZE = 40          # Hitbox grootte (blijft 40)
+ITEM_VISUAL_SIZE = 64   # NIEUW: Plaatje grootte (lekker groot)
 HEALTH_REGEN = 30
 AMMO_PACK_AMOUNT = 10
 SHOTGUN_AMMO_AMOUNT = 5
 
 # VIJAND
 ENEMY_SPEED = 2
-ENEMY_SIZE = 64         # OOK TERUG: Monsters moeten ook door deuren kunnen
+ENEMY_SIZE = 64
 BOSS_SIZE = 128
 BOSS_HP = 500
 NORMAL_HP = 30
@@ -175,13 +176,12 @@ def load_assets():
     ASSETS["player_sprites"]["walk_down_r"] = load_smart("player_walking_down_rightfoot", PLAYER_VISUAL_SIZE, PLAYER_VISUAL_SIZE, PLAYER_COLOR)
 
     # NPC & ENEMY
-    # Monster VISUEEL groot laden (125), maar hitbox is 64
     monster_right = load_smart("monster", 125, 125, GREEN) 
     ASSETS["enemy_right"] = monster_right
     ASSETS["enemy_left"] = pygame.transform.flip(monster_right, True, False)
     ASSETS["enemy"] = monster_right 
 
-    ASSETS["boss"] = load_smart("boss", 250, 250, (100, 0, 100)) # Extra grote boss voor battle
+    ASSETS["boss"] = load_smart("boss", 250, 250, (100, 0, 100))
     ASSETS["teacher"] = load_smart("teacher", TILE_SIZE *2, TILE_SIZE *2, WHITE)
     
     if os.path.exists(os.path.join(IMAGE_PATH, "player_up.png")):
@@ -199,11 +199,11 @@ def load_assets():
     ASSETS["stairs"] = load_smart("stairs", TILE_SIZE, TILE_SIZE, (200, 200, 0))
     ASSETS["student_bench"] = load_smart("bench", TILE_SIZE, TILE_SIZE, (139, 69, 19))
 
-    # ITEMS
-    ASSETS["item_health"] = load_smart("item_health", ITEM_SIZE, ITEM_SIZE, GREEN)
-    ASSETS["item_ammo"] = load_smart("item_ammo", ITEM_SIZE, ITEM_SIZE, (255, 255, 0))
-    ASSETS["item_shotgun"] = load_smart("item_shotgun", ITEM_SIZE, ITEM_SIZE, (255, 0, 0))
-    ASSETS["item_key"] = load_smart("item_key", ITEM_SIZE, ITEM_SIZE, GOLD)
+    # ITEMS [AANGEPAST: Laden met ITEM_VISUAL_SIZE]
+    ASSETS["item_health"] = load_smart("item_health", ITEM_VISUAL_SIZE, ITEM_VISUAL_SIZE, GREEN)
+    ASSETS["item_ammo"] = load_smart("item_ammo", ITEM_VISUAL_SIZE, ITEM_VISUAL_SIZE, (255, 255, 0))
+    ASSETS["item_shotgun"] = load_smart("item_shotgun", ITEM_VISUAL_SIZE, ITEM_VISUAL_SIZE, (255, 0, 0))
+    ASSETS["item_key"] = load_smart("item_key", ITEM_VISUAL_SIZE, ITEM_VISUAL_SIZE, GOLD)
 
     print("[KLAAR] Assets geladen!")
 
