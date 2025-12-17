@@ -256,8 +256,9 @@ class Game:
             if keys[pygame.K_q]: self.state = "MENU"; pygame.quit(); exit() 
             return
         
-        # --- CUTSCENE LOGICA (VEILIGER GEMAAKT) ---
+        # --- FIX: ONDERSTEUN OOK MUISKLIK IN CUTSCENE ---
         if self.state == "CUTSCENE": 
+            # Wacht even (30 frames) zodat je niet per ongeluk dubbel klikt
             if self.cutscene_timer > 30:
                 if keys[pygame.K_SPACE] or mouse_clicked:
                     self.end_cutscene_start_boss()
@@ -398,30 +399,30 @@ class Game:
         self.cutscene_timer = 0
 
     def end_cutscene_start_boss(self):
-        # --- FIX: CRASH PREVENTIE ---
+        # --- FIX: ALLEEN FINAL BOSS TRIGGERT BATTLE ---
         if self.active_teacher:
-            # Controleer of de teacher nog in de lijst zit VOORDAT we removen
+            # We moeten checken of de teacher nog bestaat in de lijst (om dubbele events te voorkomen)
             if self.active_teacher in self.teachers:
-                self.teachers.remove(self.active_teacher)
+                self.teachers.remove(self.active_teacher) # Verwijder leraar sprite
             
-            # Check of we in de director_room zijn (Map naam)
-            if self.current_map_name == "director_room":
-                print("[INFO] Start Final Pokémon Battle!")
-                self.state = "BATTLE_START" 
-                self.trigger_battle = True 
-            else:
-                # Normale Boss: Spawn hem op de plek van de leraar
-                print(f"[INFO] Start Normale Boss Fight in {self.current_map_name}")
-                self.state = "PLAYING"
-                boss_x = self.active_teacher.rect.x
-                boss_y = self.active_teacher.rect.y
-                
-                # Spawn een boss enemy
-                boss = Enemy(boss_x, boss_y, self.map_data_original, is_boss=True)
-                boss.hp = 200 # Iets minder HP dan de final boss
-                self.enemies.append(boss)
+                # Check of we in de director_room zijn (Map naam)
+                if self.current_map_name == "director_room":
+                    print("[INFO] Start Final Pokémon Battle!")
+                    self.state = "BATTLE_START" 
+                    self.trigger_battle = True 
+                else:
+                    # Normale Boss: Spawn hem op de plek van de leraar
+                    print(f"[INFO] Start Normale Boss Fight in {self.current_map_name}")
+                    self.state = "PLAYING"
+                    boss_x = self.active_teacher.rect.x
+                    boss_y = self.active_teacher.rect.y
+                    
+                    # Spawn een boss enemy
+                    boss = Enemy(boss_x, boss_y, self.map_data_original, is_boss=True)
+                    boss.hp = 200 # Iets minder HP dan de final boss
+                    self.enemies.append(boss)
             
-            # BELANGRIJK: Reset de active_teacher variabele om herhaling te voorkomen
+            # Reset active teacher zodat we niet vastlopen
             self.active_teacher = None
 
     def handle_combat(self):
@@ -504,7 +505,8 @@ class Game:
                             self.current_room_id = "director_room"
                             self.load_map("director_room")
                             self.player_rect.x = 9 * self.tile_size 
-                            self.player_rect.y = 12 * self.tile_size 
+                            # FIX: Spawn op een geldige plek (rij 8), want rij 12 is buiten de map (11 rijen hoog)
+                            self.player_rect.y = 8 * self.tile_size 
                             self.has_key = False 
                             self.show_popup_message("DEUR GEOPEND!")
                             self.save_game()
