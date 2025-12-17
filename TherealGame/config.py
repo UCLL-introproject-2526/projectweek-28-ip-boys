@@ -62,7 +62,8 @@ WEAPONS = {
         "name": "SHOTGUN"
     }
 }
-BULLET_SIZE = 8
+# AANGEPAST: Bellen zijn groter dan kogels!
+BULLET_SIZE = 32 
 
 # ITEMS
 ITEM_SIZE = 40          
@@ -106,9 +107,9 @@ HP_BAR_CRIT = (200, 20, 20)
 # =========================
 BASE_PATH = os.path.dirname(__file__)
 IMAGE_PATH = os.path.join(BASE_PATH, "images")
-SOUND_PATH = os.path.join(BASE_PATH, "sounds") # NIEUW: Map voor geluiden
+SOUND_PATH = os.path.join(BASE_PATH, "sounds")
 SAVE_FILE = os.path.join(BASE_PATH, "savegame.json")
-MUSIC_FILE = os.path.join(SOUND_PATH, "music.mp3") # NIEUW: Het muziekbestand
+MUSIC_FILE = os.path.join(SOUND_PATH, "music.mp3")
 
 if os.path.exists(os.path.join(IMAGE_PATH, "Poster_loadingScreen.png")):
     MENU_BACKGROUND = os.path.join(IMAGE_PATH, "Poster_loadingScreen.png")
@@ -192,6 +193,10 @@ def load_assets():
         ASSETS["player_back"] = load_smart("player_down", 200, 200, PLAYER_COLOR)
 
     ASSETS["player_monster"] = load_smart("player_monster", PLAYER_VISUAL_SIZE, PLAYER_VISUAL_SIZE, (50, 0, 0))
+
+    # PROJECTILE (De Bubbel!) [NIEUW]
+    # We laden bubble.png als de projectile sprite
+    ASSETS["projectile"] = load_smart("bubble", BULLET_SIZE, BULLET_SIZE, (0, 255, 255))
 
     # OMGEVING
     ASSETS["wall"] = load_smart("wall", TILE_SIZE, WALL_HEIGHT, (100, 100, 100))
