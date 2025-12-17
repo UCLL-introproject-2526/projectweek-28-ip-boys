@@ -319,8 +319,14 @@ class Game:
                 self.projectiles.append(bullet)
                 self.shoot_cooldown = weapon_stats["cooldown"]
 
-        if pygame.mouse.get_pressed()[0]: 
-            self.check_teacher_click()
+        # ---- INTERACTIE MET TEACHER (E) ----
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_e]:
+            for teacher in self.teachers:
+                if not teacher.defeated and teacher.is_player_near(self.player_rect):
+                    self.start_cutscene(teacher)
+                    break  # voorkom meerdere triggers
+
             
         for item in self.items[:]:
             if self.player_rect.colliderect(item.rect):
@@ -370,7 +376,7 @@ class Game:
         self.popup_message = msg
         self.popup_timer = 120 
 
-    def check_teacher_click(self):
+    def check_teacher_click(self):#
         mx, my = pygame.mouse.get_pos()
         camera_x = max(0, min(self.player_rect.centerx - (config.SCREEN_WIDTH // 2), self.map_pixel_width - config.SCREEN_WIDTH))
         camera_y = max(0, min(self.player_rect.centery - (config.SCREEN_HEIGHT // 2), self.map_pixel_height - config.SCREEN_HEIGHT))
@@ -654,7 +660,11 @@ class Game:
                             else:
                                 pygame.draw.rect(self.screen, config.PLAYER_COLOR, (player_draw_x, player_draw_y, config.PLAYER_SIZE, config.PLAYER_SIZE))
                     else:
-                        entity.draw(self.screen, camera_x, camera_y)
+                        if isinstance(entity, Teacher):
+                            entity.draw(self.screen, camera_x, camera_y, self.player_rect)
+                        else:
+                            entity.draw(self.screen, camera_x, camera_y)
+
 
         # 3. PROJECTIELEN & PARTICLES
         for p in self.projectiles: p.draw(self.screen, camera_x, camera_y)
