@@ -15,6 +15,7 @@ class Game:
         self.screen = screen
         self.tile_size = config.TILE_SIZE
         
+        # HITBOX IS KLEIN (60px) ZODAT JE DOOR DEUREN PAST
         self.player_rect = pygame.Rect(0, 0, config.PLAYER_SIZE, config.PLAYER_SIZE)
         self.player_hp = config.PLAYER_HP_MAX
         self.player_invulnerable_timer = 0 
@@ -537,16 +538,28 @@ class Game:
                     self.save_game()
             
             elif tile_char == 'E':
-                if self.saved_map_name and self.saved_position is not None:
-                    self.load_map(self.saved_map_name)
-                    self.player_rect.x, self.player_rect.y = self.saved_position
-                    self.saved_position = None
-                    self.current_room_id = None
-                    self.save_game()
+                # --- NIEUW: Check of er NOG ACTIEVE VIJANDEN zijn ---
+                # We tellen alleen vijanden die nog NIET genezen zijn
+                active_enemies = [e for e in self.enemies if not e.is_cured]
+                
+                if len(active_enemies) > 0:
+                    # Toon waarschuwing en blokkeer de uitgang
+                    if self.popup_timer == 0:
+                        self.show_popup_message("VERSLA EERST DE BAAS!")
+                    # Belangrijk: hier geen 'return' anders crasht de loop, 
+                    # maar we voeren de 'load_map' hieronder gewoon NIET uit.
                 else:
-                    self.load_map("ground")
-                    self.player_rect.x = 4 * self.tile_size
-                    self.player_rect.y = 25 * self.tile_size
+                    # Geen vijanden? Dan mag je weg.
+                    if self.saved_map_name and self.saved_position is not None:
+                        self.load_map(self.saved_map_name)
+                        self.player_rect.x, self.player_rect.y = self.saved_position
+                        self.saved_position = None
+                        self.current_room_id = None
+                        self.save_game()
+                    else:
+                        self.load_map("ground")
+                        self.player_rect.x = 4 * self.tile_size
+                        self.player_rect.y = 25 * self.tile_size
             
             elif tile_char == '>': 
                 if len(self.cleared_rooms) >= 1: 
@@ -659,9 +672,7 @@ class Game:
                             player_draw_y = self.player_rect.y - camera_y
                             if "player_sprites" in config.ASSETS and config.ASSETS["player_sprites"]:
                                 
-                                # ANIMATIE LOGICA UPDATE (Left/Right + Up/Down)
                                 sprite_key = self.player_direction 
-                                
                                 if self.is_moving:
                                     if self.player_direction in ["up", "down"]:
                                         foot = "_l" if self.animation_frame == 0 else "_r"
