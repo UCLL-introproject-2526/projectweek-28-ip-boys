@@ -1,6 +1,7 @@
 import pygame
 import config
 import os
+import story
 import game
 
 def create_main_surface():
@@ -50,6 +51,7 @@ def main():
     state = "MENU"
     start_button = None
     
+    story_instance = None
     game_instance = None 
 
     while running:
@@ -60,11 +62,22 @@ def main():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if state == "MENU" and start_button:
                     if start_button.collidepoint(event.pos):
-                        state = "GAME"
-                        game_instance = game.Game(screen)
+                        state = "STORY"
+                        story_instance = story.Story(screen)
+
+                elif state == "STORY" and story_instance:
+                    story_instance.handle_click()
+
 
         if state == "MENU":
             start_button = draw_menu(screen, background)
+
+        elif state == "STORY":
+            story_instance.draw()
+            if story_instance.finished():
+                state = "GAME"
+                game_instance = game.Game(screen)
+
 
         elif state == "GAME":
             if game_instance:
