@@ -711,7 +711,7 @@ class Game:
         curr_ammo = self.ammo[curr_wep]
         font = pygame.font.Font(None, 36)
         
-        wep_text = font.render(f"Wapen: {config.WEAPONS[curr_wep]['name']} (G)", True, (255, 255, 255))
+        wep_text = font.render(f"Weapon: {config.WEAPONS[curr_wep]['name']} (G)", True, (255, 255, 255))
         self.screen.blit(wep_text, (20, 60))
         
         ammo_color = (255, 255, 255)
