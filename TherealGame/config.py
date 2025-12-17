@@ -50,7 +50,7 @@ WEAPONS = {
         "speed": 12,
         "cooldown": 20,
         "color": (255, 255, 0), 
-        "start_ammo": 20,
+        "start_ammo": 100,
         "name": "Pistool"
     },
     "shotgun": {
@@ -58,7 +58,7 @@ WEAPONS = {
         "speed": 15,
         "cooldown": 60, 
         "color": (255, 0, 0), 
-        "start_ammo": 0, 
+        "start_ammo": 15, 
         "name": "SHOTGUN"
     }
 }
@@ -70,7 +70,7 @@ ITEM_SIZE = 40
 ITEM_VISUAL_SIZE = 64   
 HEALTH_REGEN = 30
 AMMO_PACK_AMOUNT = 10
-SHOTGUN_AMMO_AMOUNT = 5
+SHOTGUN_AMMO_AMOUNT = 15
 
 # VIJAND
 ENEMY_SPEED = 2
