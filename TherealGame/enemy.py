@@ -4,6 +4,7 @@ import config
 
 class Enemy:
     def __init__(self, x, y, map_data, is_boss=False):
+        # We gebruiken hier ENEMY_SIZE (125) uit config
         size = config.BOSS_SIZE if is_boss else config.ENEMY_SIZE
         self.rect = pygame.Rect(x, y, size, size)
         self.map_data = map_data
@@ -19,6 +20,9 @@ class Enemy:
         self.direction = (0, 0)
         self.move_timer = 0
         self.change_direction()
+        
+        # Kijkrichting (voor sprites)
+        self.facing_right = True 
 
     def change_direction(self):
         possible_directions = [(self.speed, 0), (-self.speed, 0), (0, self.speed), (0, -self.speed), (0, 0)]
@@ -40,6 +44,9 @@ class Enemy:
         dy = player_rect.centery - self.rect.centery
         distance = (dx ** 2 + dy ** 2) ** 0.5
 
+        move_x = 0
+        move_y = 0
+
         if distance < self.chase_radius:
             if distance != 0:
                 dx /= distance
@@ -52,6 +59,12 @@ class Enemy:
                 self.change_direction()
             move_x = self.direction[0]
             move_y = self.direction[1]
+
+        # Richting updaten voor de sprite
+        if move_x > 0:
+            self.facing_right = True
+        elif move_x < 0:
+            self.facing_right = False
 
         self.rect.x += move_x
         if self.check_collision(): self.rect.x -= move_x
@@ -67,7 +80,6 @@ class Enemy:
             if 0 <= row < len(self.map_data):
                 if 0 <= col < len(self.map_data[row]):
                     tile = self.map_data[row][col]
-                    # Update: Vijanden botsen tegen Muren (W), Bankjes (b en B) en Gesloten Deuren (L)
                     if tile == 'W' or tile == 'b' or tile == 'B' or tile == 'L': 
                         return True
             else:
@@ -86,9 +98,24 @@ class Enemy:
             pygame.draw.circle(screen, (255, 200, 200), 
                              (draw_x + self.rect.width//2, draw_y + self.rect.height//2), 10)
         else:
-            asset_key = "boss" if self.is_boss else "enemy"
-            if asset_key in config.ASSETS:
-                screen.blit(config.ASSETS[asset_key], (draw_x, draw_y))
+            if self.is_boss:
+                if "boss" in config.ASSETS:
+                    screen.blit(config.ASSETS["boss"], (draw_x, draw_y))
+                else:
+                    pygame.draw.rect(screen, (100, 0, 100), (draw_x, draw_y, self.rect.width, self.rect.height))
             else:
-                color = (100, 0, 100) if self.is_boss else (0, 255, 0)
-                pygame.draw.rect(screen, color, (draw_x, draw_y, self.rect.width, self.rect.height))
+                # STANDAARD VIJAND
+                # Kies sprite op basis van richting
+                sprite = None
+                if self.facing_right:
+                    sprite = config.ASSETS.get("enemy_right")
+                else:
+                    sprite = config.ASSETS.get("enemy_left")
+                
+                # Fallback
+                if not sprite: sprite = config.ASSETS.get("enemy")
+
+                if sprite:
+                    screen.blit(sprite, (draw_x, draw_y))
+                else:
+                    pygame.draw.rect(screen, (0, 255, 0), (draw_x, draw_y, self.rect.width, self.rect.height))
