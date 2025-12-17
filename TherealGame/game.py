@@ -16,6 +16,7 @@ class Game:
         self.screen = screen
         self.tile_size = config.TILE_SIZE
         
+        # HITBOX IS KLEIN (60px) ZODAT JE DOOR DEUREN PAST
         self.player_rect = pygame.Rect(0, 0, config.PLAYER_SIZE, config.PLAYER_SIZE)
         self.player_hp = config.PLAYER_HP_MAX
         self.player_invulnerable_timer = 0 
@@ -239,6 +240,7 @@ class Game:
 
     def handle_input(self):
         keys = pygame.key.get_pressed()
+        mouse_clicked = pygame.mouse.get_pressed()[0] # Check linkermuisknop
 
         if keys[pygame.K_ESCAPE]:
             self.state = "PAUSED"
@@ -253,9 +255,13 @@ class Game:
             if keys[pygame.K_r]: self.reset_game()
             if keys[pygame.K_q]: self.state = "MENU"; pygame.quit(); exit() 
             return
+        
+        # --- FIX: ONDERSTEUN OOK MUISKLIK IN CUTSCENE ---
         if self.state == "CUTSCENE": 
-            if keys[pygame.K_SPACE] and self.cutscene_timer > 30:
-                self.end_cutscene_start_boss()
+            # Wacht even (30 frames) zodat je niet per ongeluk dubbel klikt
+            if self.cutscene_timer > 30:
+                if keys[pygame.K_SPACE] or mouse_clicked:
+                    self.end_cutscene_start_boss()
             return
 
         dx = 0
@@ -393,11 +399,11 @@ class Game:
         self.cutscene_timer = 0
 
     def end_cutscene_start_boss(self):
-        # HIER IS DE CHECK: FINAL BOSS VS NORMALE BOSS
+        # --- FIX: ALLEEN FINAL BOSS TRIGGERT BATTLE ---
         if self.active_teacher:
-            self.teachers.remove(self.active_teacher) # Haal leraar weg van de kaart
+            self.teachers.remove(self.active_teacher) # Verwijder leraar sprite
             
-            # Check of dit de Director Room is (Final Boss)
+            # Check of we in de director_room zijn (Map naam)
             if self.current_map_name == "director_room":
                 print("[INFO] Start Final Pokémon Battle!")
                 self.state = "BATTLE_START" 
@@ -406,16 +412,12 @@ class Game:
                 # Normale Boss: Spawn hem op de plek van de leraar
                 print(f"[INFO] Start Normale Boss Fight in {self.current_map_name}")
                 self.state = "PLAYING"
-                # Spawn de boss op de plek van de leraar (gebruik oude coords)
                 boss_x = self.active_teacher.rect.x
                 boss_y = self.active_teacher.rect.y
                 
-                # Maak een boss enemy aan
-                # We gebruiken config.BOSS_SIZE zodat hij groot is, maar niet "schermvullend" groot zoals in battle
+                # Spawn een boss enemy
                 boss = Enemy(boss_x, boss_y, self.map_data_original, is_boss=True)
-                
-                # Geef hem wat extra HP (maar niet zoveel als de final boss in battle)
-                boss.hp = 200 # Bijv. 200 HP voor mid-game bosses
+                boss.hp = 200 # Iets minder HP dan de final boss
                 self.enemies.append(boss)
 
     def handle_combat(self):
@@ -444,7 +446,6 @@ class Game:
                     if e.is_cured:
                         self.player_xp += config.XP_PER_ZOMBIE
                         if e.is_boss:
-                            # Dit gebeurt alleen voor de normale bosses die je neerschiet
                             self.cleared_rooms.append(self.current_room_id)
                             self.save_game()
                     break 
@@ -499,7 +500,7 @@ class Game:
                             self.current_room_id = "director_room"
                             self.load_map("director_room")
                             self.player_rect.x = 9 * self.tile_size 
-                            self.player_rect.y = 12 * self.tile_size # Reset naar normale spawnplek nu hitbox klein is
+                            self.player_rect.y = 12 * self.tile_size 
                             self.has_key = False 
                             self.show_popup_message("DEUR GEOPEND!")
                             self.save_game()
@@ -518,7 +519,7 @@ class Game:
                     self.current_room_id = room_id
                     self.load_map("classroom")
                     self.player_rect.x = 9 * self.tile_size 
-                    self.player_rect.y = 12 * self.tile_size # Reset naar normale spawnplek
+                    self.player_rect.y = 12 * self.tile_size 
                     self.save_game()
             
             elif tile_char == 'E':
@@ -537,14 +538,14 @@ class Game:
                 if len(self.cleared_rooms) >= 1: 
                     self.load_map("first")
                     self.player_rect.topleft = self.find_spawn_point('<')
-                    self.save_game()
+                    self.save_game() 
                 else:
                      self.player_rect.x -= 10 
 
             elif tile_char == '<':
                 self.load_map("ground")
                 self.player_rect.topleft = self.find_spawn_point('>')
-                self.save_game()
+                self.save_game() 
 
     def draw(self):
         self.screen.fill(config.BLACK)
@@ -644,7 +645,9 @@ class Game:
                             player_draw_y = self.player_rect.y - camera_y
                             if "player_sprites" in config.ASSETS and config.ASSETS["player_sprites"]:
                                 
+                                # ANIMATIE LOGICA UPDATE (Left/Right + Up/Down)
                                 sprite_key = self.player_direction 
+                                
                                 if self.is_moving:
                                     if self.player_direction in ["up", "down"]:
                                         foot = "_l" if self.animation_frame == 0 else "_r"
@@ -724,7 +727,12 @@ class Game:
         if self.state == "CUTSCENE":
             self.draw_overlay_rect()
             font = pygame.font.Font(None, 32)
-            lines = ["LERAAR (Bezeten): MWUHAHA!", "(Druk op SPATIE om te vechten)"]
+            
+            # AANGEPASTE TEKST
+            lines = ["LERAAR: 'Kom maar op student!'", "(Klik of druk SPATIE voor gevecht!)"]
+            if self.current_map_name == "director_room":
+                lines = ["DIRECTEUR: 'Eens zien of je slaagt...'", "(Klik of druk SPATIE voor examen!)"]
+                
             for i, line in enumerate(lines):
                 text = font.render(line, True, (255, 255, 255))
                 self.screen.blit(text, (70, config.SCREEN_HEIGHT - 130 + i*30))
