@@ -40,11 +40,11 @@ def main():
         background = pygame.Surface((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
         background.fill(config.WHITE)
 
-    if not config.FULLSCREEN:
-        background = pygame.transform.scale(
-            background,
-            (config.SCREEN_WIDTH, config.SCREEN_HEIGHT)
-        )
+    background = pygame.transform.scale(
+    background,
+    (config.SCREEN_WIDTH, config.SCREEN_HEIGHT)
+)
+
 
     clock = pygame.time.Clock()
     running = True
