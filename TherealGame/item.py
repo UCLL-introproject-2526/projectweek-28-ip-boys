@@ -13,8 +13,13 @@ class Item:
         self.float_offset += self.float_direction
         if abs(self.float_offset) > 5: self.float_direction *= -1
         
-        draw_x = self.rect.x - camera_x
-        draw_y = self.rect.y - camera_y + self.float_offset
+        # Centreer het GROTE plaatje (Visual Size) op de KLEINE hitbox (Rect)
+        # Formule: (Groot - Klein) / 2 = Offset
+        offset_x = (config.ITEM_VISUAL_SIZE - config.ITEM_SIZE) // 2
+        offset_y = (config.ITEM_VISUAL_SIZE - config.ITEM_SIZE) // 2
+        
+        draw_x = self.rect.x - camera_x - offset_x
+        draw_y = self.rect.y - camera_y - offset_y + self.float_offset
 
         asset_name = f"item_{self.item_type}"
         if asset_name in config.ASSETS:
@@ -24,5 +29,5 @@ class Item:
              if self.item_type == "health": color = (0, 255, 0)
              if self.item_type == "ammo": color = (255, 255, 0)
              if self.item_type == "shotgun": color = (255, 0, 0)
-             if self.item_type == "key": color = (255, 215, 0) # Goud
-             pygame.draw.rect(screen, color, (draw_x, draw_y, config.ITEM_SIZE, config.ITEM_SIZE))
+             if self.item_type == "key": color = (255, 215, 0) 
+             pygame.draw.rect(screen, color, (draw_x + offset_x, draw_y + offset_y, config.ITEM_SIZE, config.ITEM_SIZE))
