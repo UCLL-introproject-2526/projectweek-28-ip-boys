@@ -19,7 +19,7 @@ class Story:
             "Welcome To University Colleges Leuven-Limburg",
             "You'll either survive... or become a teacher",
             "Forget exams! The real challenge is staying alive",
-            "AH AH AH AH STAYING ALIVE!",
+            "AH! AH! AH! AH! STAYING ALIVE! STAYING ALIVE! AH UHM...!",
             "School survival 101: don't become a snack",
             "GOOD LUCK"
         ]
