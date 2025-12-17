@@ -1,5 +1,7 @@
 import pygame
 import random
+import json
+import os
 import config
 import UCLL_maps as maps
 from enemy import Enemy
@@ -8,7 +10,7 @@ from npc import Teacher
 from item import Item
 
 class Game:
-    def __init__(self, screen):
+    def __init__(self, screen, load_saved=False):
         self.screen = screen
         self.tile_size = config.TILE_SIZE
         
@@ -18,11 +20,11 @@ class Game:
         
         self.player_direction = "down"
         
-        # ANIMATIE VARIABELEN
+        # ANIMATIE
         self.is_moving = False
         self.animation_timer = 0
         self.animation_speed = 10 
-        self.animation_frame = 0  # 0 = Frame A, 1 = Frame B
+        self.animation_frame = 0 
         
         # INVENTORY
         self.weapons_owned = ["pistol"] 
@@ -54,9 +56,63 @@ class Game:
         self.popup_message = None 
         self.popup_timer = 0
 
-        self.load_map("ground") 
-        self.player_rect.x = 4 * self.tile_size
-        self.player_rect.y = 25 * self.tile_size
+        # SAVE/LOAD LOGICA
+        if load_saved and os.path.exists(config.SAVE_FILE):
+            self.load_game()
+        else:
+            self.load_map("ground") 
+            self.player_rect.x = 4 * self.tile_size
+            self.player_rect.y = 25 * self.tile_size
+
+    def save_game(self):
+        """Slaat alle belangrijke speldata op in een JSON bestand."""
+        data = {
+            "player_hp": self.player_hp,
+            "player_x": self.player_rect.x,
+            "player_y": self.player_rect.y,
+            "current_map_name": self.current_map_name,
+            "weapons_owned": self.weapons_owned,
+            "current_weapon_index": self.current_weapon_index,
+            "ammo": self.ammo,
+            "has_key": self.has_key,
+            "cleared_rooms": self.cleared_rooms,
+            "saved_position": self.saved_position,
+            "saved_map_name": self.saved_map_name,
+            "current_room_id": self.current_room_id
+        }
+        try:
+            with open(config.SAVE_FILE, 'w') as f:
+                json.dump(data, f)
+            print("[INFO] Spel automatisch opgeslagen.")
+        except Exception as e:
+            print(f"[FOUT] Kon spel niet opslaan: {e}")
+
+    def load_game(self):
+        """Laadt de speldata uit het JSON bestand."""
+        try:
+            with open(config.SAVE_FILE, 'r') as f:
+                data = json.load(f)
+            
+            self.player_hp = data.get("player_hp", 100)
+            self.current_map_name = data.get("current_map_name", "ground")
+            self.weapons_owned = data.get("weapons_owned", ["pistol"])
+            self.current_weapon_index = data.get("current_weapon_index", 0)
+            self.ammo = data.get("ammo", {"pistol": 20, "shotgun": 0})
+            self.has_key = data.get("has_key", False)
+            self.cleared_rooms = data.get("cleared_rooms", [])
+            self.saved_position = data.get("saved_position", None)
+            self.saved_map_name = data.get("saved_map_name", "ground")
+            self.current_room_id = data.get("current_room_id", None)
+            
+            # Eerst map laden, dan positie zetten (anders overschrijft load_map de positie)
+            self.load_map(self.current_map_name)
+            self.player_rect.x = data.get("player_x", 4 * config.TILE_SIZE)
+            self.player_rect.y = data.get("player_y", 25 * config.TILE_SIZE)
+            
+            print("[INFO] Spel geladen!")
+        except Exception as e:
+            print(f"[FOUT] Kon savefile niet laden: {e}")
+            self.load_map("ground") # Fallback
 
     def load_map(self, map_name):
         self.current_map_name = map_name
@@ -126,6 +182,9 @@ class Game:
         self.player_rect.x = 4 * self.tile_size
         self.player_rect.y = 25 * self.tile_size
         self.state = "PLAYING"
+        
+        # Save resetten/overschrijven met nieuw begin
+        self.save_game()
 
     def spawn_random_zombie(self):
         if self.current_map_name not in ["ground", "first"]:
@@ -154,7 +213,10 @@ class Game:
             return
         if self.state == "PAUSED":
             if keys[pygame.K_r]: self.state = "PLAYING" 
-            if keys[pygame.K_q]: pygame.quit(); exit()
+            if keys[pygame.K_q]: 
+                # Opslaan bij afsluiten via pauze menu
+                self.save_game()
+                pygame.quit(); exit()
             return
         if self.state == "GAMEOVER":
             if keys[pygame.K_r]: self.reset_game()
@@ -169,7 +231,6 @@ class Game:
         dy = 0
         self.is_moving = False 
 
-        # BEWEGING
         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
             dx = -config.PLAYER_SPEED
             self.player_direction = "left"
@@ -187,7 +248,6 @@ class Game:
             self.player_direction = "down"
             self.is_moving = True
 
-        # Animatie Timer Update
         if self.is_moving:
             self.animation_timer += 1
             if self.animation_timer >= self.animation_speed:
@@ -243,6 +303,7 @@ class Game:
                 elif item.item_type == "key": 
                     self.has_key = True
                     self.show_popup_message("SLEUTEL GEVONDEN!")
+                    self.save_game() # AUTO-SAVE BIJ SLEUTEL
                     self.items.remove(item)
 
         self.check_events()
@@ -317,7 +378,6 @@ class Game:
                 boss_x, boss_y, _ = valid_spawns[0]
                 print(f"Boss spawned op veilige plek: {boss_x}, {boss_y}")
             else:
-                print("[WAARSCHUWING] Geen ruimte gevonden! Spawn op leraar.")
                 boss_x = self.active_teacher.rect.x
                 boss_y = self.active_teacher.rect.y
 
@@ -346,6 +406,7 @@ class Game:
                     hit_enemy = True
                     if e.is_cured and e.is_boss:
                         self.cleared_rooms.append(self.current_room_id)
+                        self.save_game() # AUTO-SAVE BIJ BOSS VERSLAGEN
                     break 
             if not hit_enemy:
                 projectiles_to_keep.append(p)
@@ -399,6 +460,7 @@ class Game:
                             self.player_rect.y = 13 * self.tile_size
                             self.has_key = False 
                             self.show_popup_message("DEUR GEOPEND!")
+                            self.save_game() # AUTO-SAVE BIJ DEUR
                         else:
                             if self.popup_timer == 0:
                                 self.show_popup_message("GESLOTEN! ZOEK SLEUTEL")
@@ -415,6 +477,7 @@ class Game:
                     self.load_map("classroom")
                     self.player_rect.x = 9 * self.tile_size 
                     self.player_rect.y = 13 * self.tile_size
+                    self.save_game() # AUTO-SAVE BIJ BINNENKOMST LOKAAL
             
             elif tile_char == 'E':
                 if self.saved_map_name and self.saved_position is not None:
@@ -422,6 +485,7 @@ class Game:
                     self.player_rect.x, self.player_rect.y = self.saved_position
                     self.saved_position = None
                     self.current_room_id = None
+                    self.save_game() # AUTO-SAVE BIJ VERLATEN LOKAAL
                 else:
                     self.load_map("ground")
                     self.player_rect.x = 4 * self.tile_size
@@ -431,12 +495,14 @@ class Game:
                 if len(self.cleared_rooms) >= 1: 
                     self.load_map("first")
                     self.player_rect.topleft = self.find_spawn_point('<')
+                    self.save_game() # AUTO-SAVE BIJ TRAP
                 else:
                      self.player_rect.x -= 10 
 
             elif tile_char == '<':
                 self.load_map("ground")
                 self.player_rect.topleft = self.find_spawn_point('>')
+                self.save_game() # AUTO-SAVE BIJ TRAP
 
     def draw(self):
         self.screen.fill(config.BLACK)
@@ -531,12 +597,10 @@ class Game:
                                 
                                 if self.is_moving:
                                     if self.player_direction in ["up", "down"]:
-                                        # Voor Up/Down: Wissel tussen Left/Right foot (frame 0 of 1)
                                         foot = "_l" if self.animation_frame == 0 else "_r"
                                         sprite_key = "walk_" + self.player_direction + foot
                                         
                                     elif self.animation_frame == 1:
-                                        # Voor Left/Right: Wissel tussen Idle en Walk (bestaande logica)
                                         sprite_key = "walk_" + self.player_direction
                                 
                                 sprite = config.ASSETS["player_sprites"].get(sprite_key, config.ASSETS["player_sprites"]["down"])
@@ -580,7 +644,7 @@ class Game:
             key_text = font.render("SLEUTEL", True, (255, 215, 0))
             self.screen.blit(key_text, (70, 138))
 
-        # 5. POP-UP BERICHTEN (Zoals "Sleutel gevonden")
+        # 5. POP-UP BERICHTEN
         if self.popup_timer > 0:
             msg_surf = font.render(self.popup_message, True, (255, 255, 255))
             msg_rect = msg_surf.get_rect(center=(config.SCREEN_WIDTH//2, config.SCREEN_HEIGHT - 100))

@@ -16,8 +16,8 @@ WALL_HEIGHT = 128
 
 # SPELER
 PLAYER_SPEED = 4
-PLAYER_SIZE = 125        # GROTE Hitbox
-PLAYER_VISUAL_SIZE = 125 # GROOT Plaatje
+PLAYER_SIZE = 64        
+PLAYER_VISUAL_SIZE = 125 
 PLAYER_HP_MAX = 100
 
 # WAPENS & MUNITIE
@@ -49,14 +49,14 @@ SHOTGUN_AMMO_AMOUNT = 5
 
 # VIJAND
 ENEMY_SPEED = 2
-ENEMY_SIZE = 125        # AANGEPAST: Monster is nu ook fysiek groot!
+ENEMY_SIZE = 64
 BOSS_SIZE = 128
 BOSS_HP = 100
 NORMAL_HP = 30
 ZOMBIE_SPAWN_RATE = 300 
 
 # =========================
-# COLORS (Fallback)
+# COLORS
 # =========================
 GREEN = (0, 180, 0)
 BLACK = (0, 0, 0)
@@ -64,12 +64,16 @@ WHITE = (255, 255, 255)
 PLAYER_COLOR = (255, 0, 0)
 GOLD = (255, 215, 0) 
 BUBBLE_COLOR = (0, 200, 255) 
+BUTTON_COLOR = (50, 50, 50)       
+HIGHLIGHT_COLOR = (255, 215, 0)   
+TEXT_COLOR = (255, 255, 255)
 
 # =========================
 # PATHS
 # =========================
 BASE_PATH = os.path.dirname(__file__)
 IMAGE_PATH = os.path.join(BASE_PATH, "images")
+SAVE_FILE = os.path.join(BASE_PATH, "savegame.json") # NIEUW: Opslagbestand
 
 if os.path.exists(os.path.join(IMAGE_PATH, "Poster_loadingScreen.png")):
     MENU_BACKGROUND = os.path.join(IMAGE_PATH, "Poster_loadingScreen.png")
@@ -82,13 +86,11 @@ else:
 ASSETS = {}
 
 def load_assets():
-    print("--- ASSETS LADEN (BIG MONSTER UPDATE) ---")
+    print("--- ASSETS LADEN ---")
     
     def load_smart(filename_base, w, h, color):
-        # 1. Probeer PNG
         full_path = os.path.join(IMAGE_PATH, filename_base + ".png")
         if not os.path.exists(full_path):
-            # 2. Probeer JPG
             full_path = os.path.join(IMAGE_PATH, filename_base + ".jpg")
         
         if os.path.exists(full_path):
@@ -101,15 +103,13 @@ def load_assets():
             if "walking" not in filename_base: 
                 print(f"[LET OP] Plaatje niet gevonden: {filename_base}")
         
-        # 3. Fallback
         s = pygame.Surface((w, h))
         s.fill(color)
         pygame.draw.rect(s, (0,0,0), (0,0,w,h), 2)
         return s
 
-    # --- 1. SPELER SPRITES ---
+    # SPELER
     ASSETS["player_sprites"] = {}
-    
     p_down = load_smart("player_down", PLAYER_VISUAL_SIZE, PLAYER_VISUAL_SIZE, PLAYER_COLOR)
     ASSETS["player_sprites"]["down"] = p_down
     
@@ -122,7 +122,7 @@ def load_assets():
     ASSETS["player_sprites"]["left"] = p_left
     ASSETS["player_sprites"]["right"] = pygame.transform.flip(p_left, True, False)
 
-    # WALKING ANIMATIES
+    # WALKING
     p_walk_right = load_smart("player_walking", PLAYER_VISUAL_SIZE, PLAYER_VISUAL_SIZE, PLAYER_COLOR)
     ASSETS["player_sprites"]["walk_right"] = p_walk_right
     ASSETS["player_sprites"]["walk_left"] = pygame.transform.flip(p_walk_right, True, False)
@@ -142,20 +142,17 @@ def load_assets():
     ASSETS["player_sprites"]["walk_down_l"] = load_smart("player_walking_down_leftfoot", PLAYER_VISUAL_SIZE, PLAYER_VISUAL_SIZE, PLAYER_COLOR)
     ASSETS["player_sprites"]["walk_down_r"] = load_smart("player_walking_down_rightfoot", PLAYER_VISUAL_SIZE, PLAYER_VISUAL_SIZE, PLAYER_COLOR)
 
-    # --- 2. VIJANDEN (MONSTER UPDATE) ---
-    # We laden 'monster.png'. Standaard kijkt hij naar rechts.
+    # NPC & ENEMY
     monster_right = load_smart("monster", ENEMY_SIZE, ENEMY_SIZE, GREEN)
-    monster_left = pygame.transform.flip(monster_right, True, False)
-
     ASSETS["enemy_right"] = monster_right
-    ASSETS["enemy_left"] = monster_left
+    ASSETS["enemy_left"] = pygame.transform.flip(monster_right, True, False)
     ASSETS["enemy"] = monster_right 
 
     ASSETS["boss"] = load_smart("boss", BOSS_SIZE, BOSS_SIZE, (100, 0, 100))
     ASSETS["teacher"] = load_smart("teacher", TILE_SIZE, TILE_SIZE, WHITE)
     ASSETS["player_monster"] = load_smart("player_monster", PLAYER_VISUAL_SIZE, PLAYER_VISUAL_SIZE, (50, 0, 0))
 
-    # --- 3. OMGEVING ---
+    # OMGEVING
     ASSETS["wall"] = load_smart("wall", TILE_SIZE, WALL_HEIGHT, (100, 100, 100))
     ASSETS["floor"] = load_smart("floor", TILE_SIZE, TILE_SIZE, (50, 50, 50))
     ASSETS["door"] = load_smart("door", TILE_SIZE, TILE_SIZE, (0, 0, 150))
@@ -163,7 +160,7 @@ def load_assets():
     ASSETS["stairs"] = load_smart("stairs", TILE_SIZE, TILE_SIZE, (200, 200, 0))
     ASSETS["student_bench"] = load_smart("bench", TILE_SIZE, TILE_SIZE, (139, 69, 19))
 
-    # --- 4. ITEMS ---
+    # ITEMS
     ASSETS["item_health"] = load_smart("item_health", ITEM_SIZE, ITEM_SIZE, GREEN)
     ASSETS["item_ammo"] = load_smart("item_ammo", ITEM_SIZE, ITEM_SIZE, (255, 255, 0))
     ASSETS["item_shotgun"] = load_smart("item_shotgun", ITEM_SIZE, ITEM_SIZE, (255, 0, 0))
