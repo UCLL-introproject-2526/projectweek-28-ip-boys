@@ -11,6 +11,8 @@ class Enemy:
         self.is_boss = is_boss
         
         self.hp = config.BOSS_HP if is_boss else config.NORMAL_HP
+        self.max_hp = self.hp # NIEUW: Onthoud wat de MAX HP is bij start
+        
         self.alive = True
         self.is_cured = False 
         
@@ -52,7 +54,6 @@ class Enemy:
         return True
 
     def find_next_step(self, target_rect):
-        """Berekent route om obstakels heen"""
         start_col, start_row = self.get_grid_pos(self.rect.centerx, self.rect.centery)
         end_col, end_row = self.get_grid_pos(target_rect.centerx, target_rect.centery)
         
@@ -95,7 +96,6 @@ class Enemy:
         return None
 
     def check_collision_simulation(self, dx, dy):
-        """Check of een beweging een botsing zou veroorzaken ZONDER te bewegen"""
         test_rect = self.rect.copy()
         test_rect.x += dx
         test_rect.y += dy
@@ -109,9 +109,9 @@ class Enemy:
                 if 0 <= col < len(self.map_data[row]):
                     tile = self.map_data[row][col]
                     if tile == 'W' or tile == 'b' or tile == 'B' or tile == 'L': 
-                        return True # Botsing!
+                        return True 
             else:
-                return True # Buiten de map
+                return True 
         return False
 
     def update(self, player_rect):
@@ -129,29 +129,23 @@ class Enemy:
 
         # --- BOSS LOGICA ---
         if self.is_boss and self.triggered:
-            # STAP 1: Probeer RECHT op de speler af te lopen (Direct Line)
             direct_move_x = 0
             direct_move_y = 0
             if distance > 0:
                 direct_move_x = (dx / distance) * self.speed
                 direct_move_y = (dy / distance) * self.speed
 
-            # STAP 2: Check of die rechte lijn geblokkeerd wordt
             collision_x = self.check_collision_simulation(direct_move_x, 0)
             collision_y = self.check_collision_simulation(0, direct_move_y)
 
-            # Als we NIET botsen, doe de rechte lijn (Sneller & Natuurlijker)
             if not collision_x and not collision_y:
                 move_x = direct_move_x
                 move_y = direct_move_y
-                # Reset path timer zodat hij niet onnodig gaat rekenen
                 self.path_timer = 0 
-            
-            # STAP 3: We botsen! Schakel over op "Slimme Modus" (Pathfinding)
             else:
                 self.path_timer -= 1
                 if self.path_timer <= 0:
-                    self.path_timer = 10 # Herbereken elke 10 frames
+                    self.path_timer = 10 
                     self.next_step = self.find_next_step(player_rect)
                 
                 if self.next_step:
@@ -164,7 +158,6 @@ class Enemy:
                         move_x = (tdx / tdist) * self.speed
                         move_y = (tdy / tdist) * self.speed
                 else:
-                    # Fallback als pad niet gevonden kan worden: toch maar proberen te duwen
                     move_x = direct_move_x
                     move_y = direct_move_y
 
@@ -180,18 +173,15 @@ class Enemy:
             move_x = self.direction[0]
             move_y = self.direction[1]
 
-        # Sprite richting
         if move_x > 0: self.facing_right = True
         elif move_x < 0: self.facing_right = False
 
-        # Pas beweging toe (met collision check voor veiligheid)
         self.rect.x += move_x
         if self.check_collision(): self.rect.x -= move_x
         self.rect.y += move_y
         if self.check_collision(): self.rect.y -= move_y
 
     def check_collision(self):
-        # Standaard collision check na beweging
         points = [self.rect.topleft, self.rect.topright, self.rect.bottomleft, self.rect.bottomright]
         for point in points:
             col = int(point[0] // config.TILE_SIZE)
@@ -230,14 +220,16 @@ class Enemy:
                 if sprite: screen.blit(sprite, (draw_x, draw_y))
                 else: pygame.draw.rect(screen, (0, 255, 0), (draw_x, draw_y, self.rect.width, self.rect.height))
 
-            # HEALTH BAR
-            max_hp = config.BOSS_HP if self.is_boss else config.NORMAL_HP
-            hp_percent = self.hp / max_hp
+            # HEALTH BAR AANGEPAST
+            # Gebruik self.max_hp in plaats van config.BOSS_HP
+            hp_percent = self.hp / self.max_hp
             if hp_percent < 0: hp_percent = 0
+            
             bar_width = self.rect.width
             bar_height = 8 
             bar_x = draw_x
             bar_y = draw_y - 15
+            
             pygame.draw.rect(screen, (255, 0, 0), (bar_x, bar_y, bar_width, bar_height))
             pygame.draw.rect(screen, (0, 255, 0), (bar_x, bar_y, bar_width * hp_percent, bar_height))
             pygame.draw.rect(screen, (0, 0, 0), (bar_x, bar_y, bar_width, bar_height), 1)

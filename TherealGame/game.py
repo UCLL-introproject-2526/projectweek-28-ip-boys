@@ -15,14 +15,13 @@ class Game:
         self.screen = screen
         self.tile_size = config.TILE_SIZE
         
-        # HITBOX IS KLEIN (60px) ZODAT JE DOOR DEUREN PAST
         self.player_rect = pygame.Rect(0, 0, config.PLAYER_SIZE, config.PLAYER_SIZE)
         self.player_hp = config.PLAYER_HP_MAX
         self.player_invulnerable_timer = 0 
         
         self.player_direction = "down"
         
-        # XP SYSTEM
+        # XP SYSTEM 
         self.player_xp = 0
         
         # DIFFICULTY
@@ -247,6 +246,15 @@ class Game:
                 self.save_game()
                 pygame.quit(); exit()
             return
+        
+        if self.state == "WIN":
+            if keys[pygame.K_r]:
+                self.reset_game()
+            if keys[pygame.K_q]:
+                pygame.quit()
+                exit()
+            return
+
         if self.state == "GAMEOVER":
             if keys[pygame.K_r]: self.reset_game()
             if keys[pygame.K_q]: self.state = "MENU"; pygame.quit(); exit() 
@@ -407,9 +415,11 @@ class Game:
                 # Check of het de Final Boss is
                 if self.current_map_name == "director_room":
                     boss.hp = 500 # FINAL BOSS HP
+                    boss.max_hp = 500 # FIX: Update MAX HP
                     print("[INFO] Final Boss (Shooter Mode) Spawned!")
                 else:
                     boss.hp = 200 # MINI BOSS HP
+                    boss.max_hp = 200 # FIX: Update MAX HP
                     print("[INFO] Mini Boss Spawned!")
                 
                 self.enemies.append(boss)
@@ -437,7 +447,6 @@ class Game:
                     e.take_damage(p.damage)
                     hit_enemy = True
                     
-                    # --- AANGEPAST: Particles nu LICHTBLAUW (Zeep) ---
                     for _ in range(12): 
                         self.particles.append(Particle(e.rect.centerx, e.rect.centery, (135, 206, 250)))
 
@@ -650,7 +659,9 @@ class Game:
                             player_draw_y = self.player_rect.y - camera_y
                             if "player_sprites" in config.ASSETS and config.ASSETS["player_sprites"]:
                                 
+                                # ANIMATIE LOGICA UPDATE (Left/Right + Up/Down)
                                 sprite_key = self.player_direction 
+                                
                                 if self.is_moving:
                                     if self.player_direction in ["up", "down"]:
                                         foot = "_l" if self.animation_frame == 0 else "_r"
