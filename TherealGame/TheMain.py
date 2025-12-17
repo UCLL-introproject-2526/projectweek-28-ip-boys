@@ -3,7 +3,6 @@ import config
 import os
 import story
 import game
-import battle 
 
 def create_main_surface():
     return config.create_screen()
@@ -66,7 +65,6 @@ def main():
     state = "MENU"
     story_instance = None
     game_instance = None 
-    battle_instance = None 
     
     main_menu_index = 1 
     settings_menu_index = 0
@@ -88,7 +86,7 @@ def main():
         ]
 
         # ---------------------------------------------
-        # EVENT LOOP (HIER GEBEURT ALLE INPUT VERWERKING)
+        # EVENT LOOP
         # ---------------------------------------------
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -150,13 +148,6 @@ def main():
                     if state == "GAME" and game_instance is None:
                         game_instance = game.Game(screen, difficulty=difficulties[current_difficulty_index])
 
-            # BATTLE INPUT (HIER ZAT DE FOUT!)
-            elif state == "BATTLE" and battle_instance:
-                # GEEF HET EVENT DOOR AAN BATTLE
-                status = battle_instance.handle_input(event)
-                if status == "EXIT":
-                    state = "MENU" # Of credits?
-
         # ---------------------------------------------
         # DRAW & UPDATE LOOPS
         # ---------------------------------------------
@@ -176,26 +167,12 @@ def main():
 
         elif state == "GAME":
             if game_instance:
-                game_instance.handle_input() # Game gebruikt zijn eigen pygame.key.get_pressed()
+                game_instance.handle_input() 
                 game_instance.draw()
                 
                 if game_instance.state == "MENU":
                     state = "MENU"
                     game_instance = None 
-                
-                # Check of battle moet starten
-                if game_instance.trigger_battle:
-                    state = "BATTLE"
-                    battle_instance = battle.PokemonBattle(screen, game_instance.player_hp, game_instance.player_xp)
-                    game_instance = None # Sluit de actie-game af
-
-        elif state == "BATTLE":
-            if battle_instance:
-                battle_instance.update()
-                battle_instance.draw()
-                
-                if battle_instance.state == "EXIT":
-                    state = "MENU"
 
         clock.tick(60)
 

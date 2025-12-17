@@ -9,7 +9,6 @@ from projectile import Projectile
 from npc import Teacher
 from item import Item
 from particle import Particle
-import battle 
 
 class Game:
     def __init__(self, screen, load_saved=False, difficulty="NORMAL"):
@@ -23,11 +22,8 @@ class Game:
         
         self.player_direction = "down"
         
-        # XP SYSTEM
+        # XP SYSTEM (Nog steeds handig voor score of damage scaling als je dat wilt)
         self.player_xp = 0
-        
-        # BATTLE TRIGGER
-        self.trigger_battle = False 
         
         # DIFFICULTY
         self.difficulty = difficulty
@@ -240,7 +236,7 @@ class Game:
 
     def handle_input(self):
         keys = pygame.key.get_pressed()
-        mouse_clicked = pygame.mouse.get_pressed()[0] # Check linkermuisknop
+        mouse_clicked = pygame.mouse.get_pressed()[0] 
 
         if keys[pygame.K_ESCAPE]:
             self.state = "PAUSED"
@@ -256,9 +252,7 @@ class Game:
             if keys[pygame.K_q]: self.state = "MENU"; pygame.quit(); exit() 
             return
         
-        # --- FIX: ONDERSTEUN OOK MUISKLIK IN CUTSCENE ---
         if self.state == "CUTSCENE": 
-            # Wacht even (30 frames) zodat je niet per ongeluk dubbel klikt
             if self.cutscene_timer > 30:
                 if keys[pygame.K_SPACE] or mouse_clicked:
                     self.end_cutscene_start_boss()
@@ -331,9 +325,8 @@ class Game:
             for teacher in self.teachers:
                 if not teacher.defeated and teacher.is_player_near(self.player_rect):
                     self.start_cutscene(teacher)
-                    break  # voorkom meerdere triggers
+                    break 
 
-            
         for item in self.items[:]:
             if self.player_rect.colliderect(item.rect):
                 if item.item_type == "health":
@@ -399,31 +392,30 @@ class Game:
         self.cutscene_timer = 0
 
     def end_cutscene_start_boss(self):
-        # --- FIX: ALLEEN FINAL BOSS TRIGGERT BATTLE ---
         if self.active_teacher:
-            # We moeten checken of de teacher nog bestaat in de lijst (om dubbele events te voorkomen)
+            # Verwijder de teacher (NPC)
             if self.active_teacher in self.teachers:
-                self.teachers.remove(self.active_teacher) # Verwijder leraar sprite
-            
-                # Check of we in de director_room zijn (Map naam)
+                self.teachers.remove(self.active_teacher)
+                
+                # Bepaal positie
+                boss_x = self.active_teacher.rect.x
+                boss_y = self.active_teacher.rect.y
+                
+                # Spawn de Boss Enemy
+                boss = Enemy(boss_x, boss_y, self.map_data_original, is_boss=True)
+                
+                # Check of het de Final Boss is
                 if self.current_map_name == "director_room":
-                    print("[INFO] Start Final Pokémon Battle!")
-                    self.state = "BATTLE_START" 
-                    self.trigger_battle = True 
+                    boss.hp = 500 # FINAL BOSS HP
+                    print("[INFO] Final Boss (Shooter Mode) Spawned!")
                 else:
-                    # Normale Boss: Spawn hem op de plek van de leraar
-                    print(f"[INFO] Start Normale Boss Fight in {self.current_map_name}")
-                    self.state = "PLAYING"
-                    boss_x = self.active_teacher.rect.x
-                    boss_y = self.active_teacher.rect.y
-                    
-                    # Spawn een boss enemy
-                    boss = Enemy(boss_x, boss_y, self.map_data_original, is_boss=True)
-                    boss.hp = 200 # Iets minder HP dan de final boss
-                    self.enemies.append(boss)
-            
-            # Reset active teacher zodat we niet vastlopen
+                    boss.hp = 200 # MINI BOSS HP
+                    print("[INFO] Mini Boss Spawned!")
+                
+                self.enemies.append(boss)
+                
             self.active_teacher = None
+            self.state = "PLAYING" # Gewoon doorspelen!
 
     def handle_combat(self):
         projectiles_to_keep = []
@@ -505,7 +497,6 @@ class Game:
                             self.current_room_id = "director_room"
                             self.load_map("director_room")
                             self.player_rect.x = 9 * self.tile_size 
-                            # FIX: Spawn op een geldige plek (rij 8), want rij 12 is buiten de map (11 rijen hoog)
                             self.player_rect.y = 8 * self.tile_size 
                             self.has_key = False 
                             self.show_popup_message("DEUR GEOPEND!")
@@ -651,9 +642,7 @@ class Game:
                             player_draw_y = self.player_rect.y - camera_y
                             if "player_sprites" in config.ASSETS and config.ASSETS["player_sprites"]:
                                 
-                                # ANIMATIE LOGICA UPDATE (Left/Right + Up/Down)
                                 sprite_key = self.player_direction 
-                                
                                 if self.is_moving:
                                     if self.player_direction in ["up", "down"]:
                                         foot = "_l" if self.animation_frame == 0 else "_r"
