@@ -51,7 +51,7 @@ WEAPONS = {
         "cooldown": 20,
         "color": (255, 255, 0), 
         "start_ammo": 20,
-        "name": "Pistool"
+        "name": "Pistol"
     },
     "shotgun": {
         "damage": 100, 
