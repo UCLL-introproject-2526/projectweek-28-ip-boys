@@ -51,7 +51,7 @@ WEAPONS = {
         "cooldown": 20,
         "color": (255, 255, 0), 
         "start_ammo": 20,
-        "name": "Pistol"
+        "name": "Pistool"
     },
     "shotgun": {
         "damage": 100, 
@@ -62,11 +62,12 @@ WEAPONS = {
         "name": "SHOTGUN"
     }
 }
-BULLET_SIZE = 8
+# AANGEPAST: Bellen zijn groter dan kogels!
+BULLET_SIZE = 32 
 
 # ITEMS
-ITEM_SIZE = 40          # Hitbox grootte (blijft 40)
-ITEM_VISUAL_SIZE = 64   # NIEUW: Plaatje grootte (lekker groot)
+ITEM_SIZE = 40          
+ITEM_VISUAL_SIZE = 64   
 HEALTH_REGEN = 30
 AMMO_PACK_AMOUNT = 10
 SHOTGUN_AMMO_AMOUNT = 5
@@ -106,7 +107,9 @@ HP_BAR_CRIT = (200, 20, 20)
 # =========================
 BASE_PATH = os.path.dirname(__file__)
 IMAGE_PATH = os.path.join(BASE_PATH, "images")
+SOUND_PATH = os.path.join(BASE_PATH, "sounds")
 SAVE_FILE = os.path.join(BASE_PATH, "savegame.json")
+MUSIC_FILE = os.path.join(SOUND_PATH, "music.mp3")
 
 if os.path.exists(os.path.join(IMAGE_PATH, "Poster_loadingScreen.png")):
     MENU_BACKGROUND = os.path.join(IMAGE_PATH, "Poster_loadingScreen.png")
@@ -191,6 +194,10 @@ def load_assets():
 
     ASSETS["player_monster"] = load_smart("player_monster", PLAYER_VISUAL_SIZE, PLAYER_VISUAL_SIZE, (50, 0, 0))
 
+    # PROJECTILE (De Bubbel!) [NIEUW]
+    # We laden bubble.png als de projectile sprite
+    ASSETS["projectile"] = load_smart("bubble", BULLET_SIZE, BULLET_SIZE, (0, 255, 255))
+
     # OMGEVING
     ASSETS["wall"] = load_smart("wall", TILE_SIZE, WALL_HEIGHT, (100, 100, 100))
     ASSETS["floor"] = load_smart("floor", TILE_SIZE, TILE_SIZE, (50, 50, 50))
@@ -199,7 +206,7 @@ def load_assets():
     ASSETS["stairs"] = load_smart("stairs", TILE_SIZE, TILE_SIZE, (200, 200, 0))
     ASSETS["student_bench"] = load_smart("bench", TILE_SIZE, TILE_SIZE, (139, 69, 19))
 
-    # ITEMS [AANGEPAST: Laden met ITEM_VISUAL_SIZE]
+    # ITEMS
     ASSETS["item_health"] = load_smart("item_health", ITEM_VISUAL_SIZE, ITEM_VISUAL_SIZE, GREEN)
     ASSETS["item_ammo"] = load_smart("item_ammo", ITEM_VISUAL_SIZE, ITEM_VISUAL_SIZE, (255, 255, 0))
     ASSETS["item_shotgun"] = load_smart("item_shotgun", ITEM_VISUAL_SIZE, ITEM_VISUAL_SIZE, (255, 0, 0))

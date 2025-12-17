@@ -43,10 +43,26 @@ def draw_menu(screen, background, options, selected_index):
 
 def main():
     pygame.init()
+    # BELANGRIJK: Mixer starten voor geluid
+    pygame.mixer.init()
+
     screen = create_main_surface()
     pygame.display.set_caption("Campus Creatures")
 
     config.load_assets()
+
+    # --- MUZIEK LADEN EN STARTEN ---
+    if os.path.exists(config.MUSIC_FILE):
+        try:
+            pygame.mixer.music.load(config.MUSIC_FILE)
+            pygame.mixer.music.set_volume(0.5) # Volume (0.0 tot 1.0)
+            pygame.mixer.music.play(-1) # -1 zorgt voor oneindige loop
+            print(f"[INFO] Muziek gestart: {config.MUSIC_FILE}")
+        except Exception as e:
+            print(f"[FOUT] Kon muziek niet laden: {e}")
+    else:
+        print(f"[LET OP] Geen muziekbestand gevonden op: {config.MUSIC_FILE}")
+    # -------------------------------
 
     if os.path.exists(config.MENU_BACKGROUND):
         background = pygame.image.load(config.MENU_BACKGROUND)
