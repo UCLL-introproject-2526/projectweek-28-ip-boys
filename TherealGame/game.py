@@ -247,6 +247,15 @@ class Game:
                 self.save_game()
                 pygame.quit(); exit()
             return
+        
+        if self.state == "WIN":
+            if keys[pygame.K_r]:
+                self.reset_game()
+            if keys[pygame.K_q]:
+                pygame.quit()
+                exit()
+            return
+
         if self.state == "GAMEOVER":
             if keys[pygame.K_r]: self.reset_game()
             if keys[pygame.K_q]: self.state = "MENU"; pygame.quit(); exit() 
@@ -443,9 +452,16 @@ class Game:
                     if e.is_cured:
                         self.player_xp += config.XP_PER_ZOMBIE
                         if e.is_boss:
-                            self.cleared_rooms.append(self.current_room_id)
-                            self.save_game()
-                    break 
+                            if self.current_map_name == "director_room":
+                                print("[INFO] Final Boss verslagen – GAME WON!")
+                                self.state = "WIN"
+                                self.save_game()
+                                return  # stop verdere combat processing
+                            else:
+                            # Normale boss
+                                self.cleared_rooms.append(self.current_room_id)
+                                self.save_game()
+                                break 
             if not hit_enemy:
                 projectiles_to_keep.append(p)
         self.projectiles = projectiles_to_keep
@@ -738,6 +754,9 @@ class Game:
 
         elif self.state == "GAMEOVER":
             self.draw_popup("GAME OVER", ["R - Opnieuw proberen", "Q - Afsluiten"], (60, 20, 20))
+
+        elif self.state == "WIN":
+            self.draw_popup("YOU GRADUATED 🎓",["R - Opnieuw spelen", "Q - Afsluiten"],(20, 100, 20))
 
         pygame.display.flip()
 
