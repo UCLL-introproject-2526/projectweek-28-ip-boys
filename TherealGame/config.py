@@ -16,8 +16,8 @@ WALL_HEIGHT = 128
 
 # SPELER
 PLAYER_SPEED = 4
-PLAYER_SIZE = 40        
-PLAYER_VISUAL_SIZE = 125 
+PLAYER_SIZE = 64        # Hitbox (zoals gevraagd)
+PLAYER_VISUAL_SIZE = 125 # Visuele grootte (zoals gevraagd)
 PLAYER_HP_MAX = 100
 
 # WAPENS & MUNITIE
@@ -82,7 +82,7 @@ else:
 ASSETS = {}
 
 def load_assets():
-    print("--- ASSETS LADEN (FULL ANIMATION) ---")
+    print("--- ASSETS LADEN (TEXT MODE) ---")
     
     def load_smart(filename_base, w, h, color):
         # 1. Probeer PNG
@@ -96,11 +96,11 @@ def load_assets():
                 img = pygame.image.load(full_path).convert_alpha()
                 return pygame.transform.scale(img, (w, h))
             except Exception as e:
-                print(f"Fout bij laden {full_path}: {e}")
+                print(f"[FOUT] Fout bij laden {full_path}: {e}")
         else:
             # Alleen printen als het geen optionele animatie is
             if "walking" not in filename_base: 
-                print(f"⚠️ Plaatje niet gevonden: {filename_base}")
+                print(f"[LET OP] Plaatje niet gevonden: {filename_base}")
         
         # 3. Fallback
         s = pygame.Surface((w, h))
@@ -131,7 +131,7 @@ def load_assets():
     ASSETS["player_sprites"]["walk_right"] = p_walk_right
     ASSETS["player_sprites"]["walk_left"] = p_walk_left
     
-    # WALKING ANIMATIES (BOVEN / ONDER) - NIEUW!
+    # WALKING ANIMATIES (BOVEN / ONDER)
     # Check of player_walking_up.png bestaat
     if os.path.exists(os.path.join(IMAGE_PATH, "player_walking_up.png")):
          ASSETS["player_sprites"]["walk_up"] = load_smart("player_walking_up", PLAYER_VISUAL_SIZE, PLAYER_VISUAL_SIZE, PLAYER_COLOR)
@@ -166,7 +166,7 @@ def load_assets():
     ASSETS["item_shotgun"] = load_smart("item_shotgun", ITEM_SIZE, ITEM_SIZE, (255, 0, 0))
     ASSETS["item_key"] = load_smart("item_key", ITEM_SIZE, ITEM_SIZE, GOLD)
 
-    print("✅ Assets geladen (Met Walking Up/Down Support)!")
+    print("[KLAAR] Assets geladen!")
 
 def create_screen():
     if FULLSCREEN: return pygame.display.set_mode((0, 0), pygame.FULLSCREEN)

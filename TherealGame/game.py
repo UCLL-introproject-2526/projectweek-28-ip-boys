@@ -285,6 +285,7 @@ class Game:
     def end_cutscene_start_boss(self):
         self.state = "PLAYING"
         if self.active_teacher:
+            # FIX: Bereken ruimte voor een GROTE boss!
             boss_tiles_w = (config.BOSS_SIZE // self.tile_size) + 1
             boss_tiles_h = (config.BOSS_SIZE // self.tile_size) + 1
             valid_spawns = []
@@ -317,7 +318,7 @@ class Game:
                 boss_x, boss_y, _ = valid_spawns[0]
                 print(f"Boss spawned op veilige plek: {boss_x}, {boss_y}")
             else:
-                print("⚠️ Geen ruimte gevonden! Spawn op leraar.")
+                print("[WAARSCHUWING] Geen ruimte gevonden! Spawn op leraar.")
                 boss_x = self.active_teacher.rect.x
                 boss_y = self.active_teacher.rect.y
 
@@ -526,10 +527,7 @@ class Game:
                             player_draw_y = self.player_rect.y - camera_y
                             if "player_sprites" in config.ASSETS and config.ASSETS["player_sprites"]:
                                 
-                                # ANIMATIE LOGICA UPDATE
                                 sprite_key = self.player_direction 
-                                
-                                # Als we bewegen én in animatie frame 1 zitten -> walk versie
                                 if self.is_moving and self.animation_frame == 1:
                                     sprite_key = "walk_" + self.player_direction
                                 
@@ -574,7 +572,7 @@ class Game:
             key_text = font.render("SLEUTEL", True, (255, 215, 0))
             self.screen.blit(key_text, (70, 138))
 
-        # 5. POP-UP BERICHTEN (Zoals "Sleutel gevonden")
+        # 5. POP-UP BERICHTEN
         if self.popup_timer > 0:
             msg_surf = font.render(self.popup_message, True, (255, 255, 255))
             msg_rect = msg_surf.get_rect(center=(config.SCREEN_WIDTH//2, config.SCREEN_HEIGHT - 100))
