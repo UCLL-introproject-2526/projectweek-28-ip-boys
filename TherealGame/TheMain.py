@@ -3,7 +3,7 @@ import config
 import os
 import story
 import game
-import battle # NIEUW
+import battle 
 
 def create_main_surface():
     return config.create_screen()
@@ -66,7 +66,7 @@ def main():
     state = "MENU"
     story_instance = None
     game_instance = None 
-    battle_instance = None # NIEUW
+    battle_instance = None 
     
     main_menu_index = 1 
     settings_menu_index = 0
@@ -78,7 +78,6 @@ def main():
     next_state_after_story = "GAME"
 
     while running:
-        # MENU OPTIES
         main_options = ["Continue", "New Game", "Settings", "Backstory", "Quit"]
         diff_name = difficulties[current_difficulty_index]
         scr_name = "ON" if is_fullscreen else "OFF"
@@ -88,11 +87,14 @@ def main():
             "Back"
         ]
 
-        # LOOP VOOR INPUT EVENTS (BELANGRIJK: Slechts 1 loop per frame)
+        # ---------------------------------------------
+        # EVENT LOOP (HIER GEBEURT ALLE INPUT VERWERKING)
+        # ---------------------------------------------
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
 
+            # MENU INPUT
             if state == "MENU":
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_UP or event.key == pygame.K_w:
@@ -120,6 +122,7 @@ def main():
                             story_instance = story.Story(screen)
                         elif choice == "Quit": running = False
 
+            # SETTINGS INPUT
             elif state == "SETTINGS":
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_UP or event.key == pygame.K_w:
@@ -138,6 +141,7 @@ def main():
                         elif settings_menu_index == 2: state = "MENU"
                     elif event.key == pygame.K_ESCAPE: state = "MENU"
 
+            # STORY INPUT
             elif state == "STORY" and story_instance:
                 if event.type == pygame.MOUSEBUTTONDOWN or (event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT):
                     story_instance.handle_click()
@@ -146,12 +150,16 @@ def main():
                     if state == "GAME" and game_instance is None:
                         game_instance = game.Game(screen, difficulty=difficulties[current_difficulty_index])
 
-            # GAME en BATTLE handelen input zelf af in hun loop, 
-            # maar we moeten hier de QUIT events niet 'opeten' voor hun neus.
-            # Oplossing: Game en Battle gebruiken pygame.key.get_pressed() intern, 
-            # of we geven de event door. Hier gebruiken we get_pressed in game.py, dus dit is ok.
+            # BATTLE INPUT (HIER ZAT DE FOUT!)
+            elif state == "BATTLE" and battle_instance:
+                # GEEF HET EVENT DOOR AAN BATTLE
+                status = battle_instance.handle_input(event)
+                if status == "EXIT":
+                    state = "MENU" # Of credits?
 
-        # --- UPDATE & DRAW ---
+        # ---------------------------------------------
+        # DRAW & UPDATE LOOPS
+        # ---------------------------------------------
         if state == "MENU":
             draw_menu(screen, background, main_options, main_menu_index)
 
@@ -168,33 +176,26 @@ def main():
 
         elif state == "GAME":
             if game_instance:
-                game_instance.handle_input()
+                game_instance.handle_input() # Game gebruikt zijn eigen pygame.key.get_pressed()
                 game_instance.draw()
                 
                 if game_instance.state == "MENU":
                     state = "MENU"
                     game_instance = None 
                 
-                # CHECK VOOR BATTLE SWITCH
+                # Check of battle moet starten
                 if game_instance.trigger_battle:
                     state = "BATTLE"
-                    # Maak battle aan met huidige HP en XP
                     battle_instance = battle.PokemonBattle(screen, game_instance.player_hp, game_instance.player_xp)
-                    game_instance = None # Pauzeer/Stop de main game
+                    game_instance = None # Sluit de actie-game af
 
         elif state == "BATTLE":
             if battle_instance:
-                battle_instance.handle_input()
                 battle_instance.update()
                 battle_instance.draw()
                 
-                if battle_instance.state == "WIN":
-                    # Hier zou je naar credits kunnen gaan
-                    if battle_instance.timer < 0 and pygame.key.get_pressed()[pygame.K_RETURN]:
-                         state = "MENU" # Terug naar menu na winst
-                elif battle_instance.state == "LOSE":
-                    if battle_instance.timer < 0 and pygame.key.get_pressed()[pygame.K_RETURN]:
-                         state = "MENU"
+                if battle_instance.state == "EXIT":
+                    state = "MENU"
 
         clock.tick(60)
 
