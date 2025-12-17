@@ -16,8 +16,8 @@ WALL_HEIGHT = 128
 
 # SPELER
 PLAYER_SPEED = 4
-PLAYER_SIZE = 64        # Hitbox (zoals gevraagd)
-PLAYER_VISUAL_SIZE = 125 # Visuele grootte (zoals gevraagd)
+PLAYER_SIZE = 64        
+PLAYER_VISUAL_SIZE = 125 
 PLAYER_HP_MAX = 100
 
 # WAPENS & MUNITIE
@@ -82,7 +82,7 @@ else:
 ASSETS = {}
 
 def load_assets():
-    print("--- ASSETS LADEN (TEXT MODE) ---")
+    print("--- ASSETS LADEN (FOOTSTEPS UPDATE) ---")
     
     def load_smart(filename_base, w, h, color):
         # 1. Probeer PNG
@@ -124,27 +124,20 @@ def load_assets():
     ASSETS["player_sprites"]["left"] = p_left
     ASSETS["player_sprites"]["right"] = pygame.transform.flip(p_left, True, False)
 
-    # WALKING ANIMATIES (LINKS / RECHTS)
+    # WALKING ANIMATIES (LINKS / RECHTS - Enkel frame)
     p_walk_right = load_smart("player_walking", PLAYER_VISUAL_SIZE, PLAYER_VISUAL_SIZE, PLAYER_COLOR)
     p_walk_left = pygame.transform.flip(p_walk_right, True, False)
     
     ASSETS["player_sprites"]["walk_right"] = p_walk_right
     ASSETS["player_sprites"]["walk_left"] = p_walk_left
     
-    # WALKING ANIMATIES (BOVEN / ONDER)
-    # Check of player_walking_up.png bestaat
-    if os.path.exists(os.path.join(IMAGE_PATH, "player_walking_up.png")):
-         ASSETS["player_sprites"]["walk_up"] = load_smart("player_walking_up", PLAYER_VISUAL_SIZE, PLAYER_VISUAL_SIZE, PLAYER_COLOR)
-    else:
-         # Fallback: gebruik gewone 'up' sprite
-         ASSETS["player_sprites"]["walk_up"] = ASSETS["player_sprites"]["up"]
-
-    # Check of player_walking_down.png bestaat
-    if os.path.exists(os.path.join(IMAGE_PATH, "player_walking_down.png")):
-         ASSETS["player_sprites"]["walk_down"] = load_smart("player_walking_down", PLAYER_VISUAL_SIZE, PLAYER_VISUAL_SIZE, PLAYER_COLOR)
-    else:
-         # Fallback: gebruik gewone 'down' sprite
-         ASSETS["player_sprites"]["walk_down"] = ASSETS["player_sprites"]["down"]
+    # WALKING ANIMATIES (BOVEN / ONDER - ALTERNERENDE VOETEN)
+    # We laden nu specifiek de "leftfoot" en "rightfoot" bestanden
+    ASSETS["player_sprites"]["walk_up_l"] = load_smart("player_walking_up_leftfoot", PLAYER_VISUAL_SIZE, PLAYER_VISUAL_SIZE, PLAYER_COLOR)
+    ASSETS["player_sprites"]["walk_up_r"] = load_smart("player_walking_up_rightfoot", PLAYER_VISUAL_SIZE, PLAYER_VISUAL_SIZE, PLAYER_COLOR)
+    
+    ASSETS["player_sprites"]["walk_down_l"] = load_smart("player_walking_down_leftfoot", PLAYER_VISUAL_SIZE, PLAYER_VISUAL_SIZE, PLAYER_COLOR)
+    ASSETS["player_sprites"]["walk_down_r"] = load_smart("player_walking_down_rightfoot", PLAYER_VISUAL_SIZE, PLAYER_VISUAL_SIZE, PLAYER_COLOR)
 
     # --- 2. VIJANDEN & NPC ---
     ASSETS["enemy"] = load_smart("zombie", ENEMY_SIZE, ENEMY_SIZE, GREEN)
@@ -166,7 +159,7 @@ def load_assets():
     ASSETS["item_shotgun"] = load_smart("item_shotgun", ITEM_SIZE, ITEM_SIZE, (255, 0, 0))
     ASSETS["item_key"] = load_smart("item_key", ITEM_SIZE, ITEM_SIZE, GOLD)
 
-    print("[KLAAR] Assets geladen!")
+    print("[KLAAR] Assets geladen met Geavanceerde Walking Animation!")
 
 def create_screen():
     if FULLSCREEN: return pygame.display.set_mode((0, 0), pygame.FULLSCREEN)

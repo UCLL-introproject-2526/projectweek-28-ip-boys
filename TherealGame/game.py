@@ -22,7 +22,7 @@ class Game:
         self.is_moving = False
         self.animation_timer = 0
         self.animation_speed = 10 
-        self.animation_frame = 0  
+        self.animation_frame = 0  # 0 = Frame A, 1 = Frame B
         
         # INVENTORY
         self.weapons_owned = ["pistol"] 
@@ -285,7 +285,6 @@ class Game:
     def end_cutscene_start_boss(self):
         self.state = "PLAYING"
         if self.active_teacher:
-            # FIX: Bereken ruimte voor een GROTE boss!
             boss_tiles_w = (config.BOSS_SIZE // self.tile_size) + 1
             boss_tiles_h = (config.BOSS_SIZE // self.tile_size) + 1
             valid_spawns = []
@@ -527,9 +526,18 @@ class Game:
                             player_draw_y = self.player_rect.y - camera_y
                             if "player_sprites" in config.ASSETS and config.ASSETS["player_sprites"]:
                                 
+                                # ANIMATIE LOGICA UPDATE (Left/Right + Up/Down)
                                 sprite_key = self.player_direction 
-                                if self.is_moving and self.animation_frame == 1:
-                                    sprite_key = "walk_" + self.player_direction
+                                
+                                if self.is_moving:
+                                    if self.player_direction in ["up", "down"]:
+                                        # Voor Up/Down: Wissel tussen Left/Right foot (frame 0 of 1)
+                                        foot = "_l" if self.animation_frame == 0 else "_r"
+                                        sprite_key = "walk_" + self.player_direction + foot
+                                        
+                                    elif self.animation_frame == 1:
+                                        # Voor Left/Right: Wissel tussen Idle en Walk (bestaande logica)
+                                        sprite_key = "walk_" + self.player_direction
                                 
                                 sprite = config.ASSETS["player_sprites"].get(sprite_key, config.ASSETS["player_sprites"]["down"])
                                 
@@ -572,7 +580,7 @@ class Game:
             key_text = font.render("SLEUTEL", True, (255, 215, 0))
             self.screen.blit(key_text, (70, 138))
 
-        # 5. POP-UP BERICHTEN
+        # 5. POP-UP BERICHTEN (Zoals "Sleutel gevonden")
         if self.popup_timer > 0:
             msg_surf = font.render(self.popup_message, True, (255, 255, 255))
             msg_rect = msg_surf.get_rect(center=(config.SCREEN_WIDTH//2, config.SCREEN_HEIGHT - 100))
