@@ -68,6 +68,11 @@ def main():
                 elif state == "STORY" and story_instance:
                     story_instance.handle_click()
 
+            if event.type == pygame.KEYDOWN:
+                if state == "STORY" and story_instance:
+                    if event.key == pygame.K_RIGHT:
+                        story_instance.handle_click()
+
 
         if state == "MENU":
             start_button = draw_menu(screen, background)
