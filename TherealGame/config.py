@@ -32,7 +32,7 @@ WEAPONS = {
     },
     "shotgun": {
         "damage": 100, 
-        "speed": 15,
+        "speed": 5,
         "cooldown": 60, 
         "color": (255, 0, 0), 
         "start_ammo": 0, 
