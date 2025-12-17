@@ -182,7 +182,7 @@ def load_assets():
     ASSETS["enemy"] = monster_right 
 
     ASSETS["boss"] = load_smart("boss", 250, 250, (100, 0, 100)) # Extra grote boss voor battle
-    ASSETS["teacher"] = load_smart("teacher", TILE_SIZE, TILE_SIZE, WHITE)
+    ASSETS["teacher"] = load_smart("teacher", TILE_SIZE *2, TILE_SIZE *2, WHITE)
     
     if os.path.exists(os.path.join(IMAGE_PATH, "player_up.png")):
         ASSETS["player_back"] = load_smart("player_up", 200, 200, PLAYER_COLOR)
