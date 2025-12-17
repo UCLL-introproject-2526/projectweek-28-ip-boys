@@ -7,11 +7,12 @@ class Projectile:
         self.direction = direction 
         self.active = True
         
-        # Haal stats op uit config op basis van wapen (pistol/shotgun)
+        # Haal stats op uit config op basis van wapen
         stats = config.WEAPONS[weapon_type]
         self.speed = stats["speed"]
         self.damage = stats["damage"]
-        self.color = stats["color"]
+        # We gebruiken nog steeds de wapenkleur, maar nu voor de bel
+        self.color = stats["color"] 
 
     def update(self):
         if self.direction == "up":
@@ -28,6 +29,16 @@ class Projectile:
             self.active = False
 
     def draw(self, screen, camera_x, camera_y):
-        pygame.draw.rect(screen, self.color, 
-                         (self.rect.x - camera_x, self.rect.y - camera_y, 
-                          config.BULLET_SIZE, config.BULLET_SIZE))
+        # Bereken het midden van de bel
+        center_x = self.rect.centerx - camera_x
+        center_y = self.rect.centery - camera_y
+        radius = config.BULLET_SIZE // 2
+
+        # 1. Teken de bel (Gekleurde cirkel)
+        pygame.draw.circle(screen, self.color, (center_x, center_y), radius)
+        
+        # 2. Teken een randje (donkerder of zwart voor contrast)
+        pygame.draw.circle(screen, (255, 255, 255), (center_x, center_y), radius, 1)
+
+        # 3. Teken de "shine" (Witte reflectie linksboven) - Maakt het een bel!
+        pygame.draw.circle(screen, (255, 255, 255), (center_x - 2, center_y - 2), 2)

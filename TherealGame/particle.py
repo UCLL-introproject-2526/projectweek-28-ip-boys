@@ -10,19 +10,25 @@ class Particle:
         self.dx = random.uniform(-speed_range, speed_range)
         self.dy = random.uniform(-speed_range, speed_range)
         self.size = random.randint(2, size_range)
-        self.lifetime = lifetime # Hoeveel frames hij bestaat
+        self.lifetime = lifetime 
         self.original_lifetime = lifetime
 
     def update(self):
         self.x += self.dx
         self.y += self.dy
         self.lifetime -= 1
-        # Maak ze kleiner als ze sterven
+        # Maak ze kleiner als ze sterven (plop!)
         if self.lifetime < 10:
             self.size = max(0, self.size - 0.2)
 
     def draw(self, screen, camera_x, camera_y):
         if self.lifetime > 0 and self.size > 0:
-            draw_x = self.x - camera_x
-            draw_y = self.y - camera_y
-            pygame.draw.rect(screen, self.color, (draw_x, draw_y, self.size, self.size))
+            draw_x = int(self.x - camera_x)
+            draw_y = int(self.y - camera_y)
+            
+            # Teken een cirkel (Zeepbel) in plaats van een vierkant
+            pygame.draw.circle(screen, self.color, (draw_x, draw_y), int(self.size))
+            
+            # Optioneel: Een klein wit randje voor extra zeep-effect
+            if self.size > 2:
+                pygame.draw.circle(screen, (255, 255, 255), (draw_x, draw_y), int(self.size), 1)

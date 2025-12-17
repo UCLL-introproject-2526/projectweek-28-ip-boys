@@ -22,7 +22,7 @@ class Game:
         
         self.player_direction = "down"
         
-        # XP SYSTEM (Nog steeds handig voor score of damage scaling als je dat wilt)
+        # XP SYSTEM
         self.player_xp = 0
         
         # DIFFICULTY
@@ -247,15 +247,6 @@ class Game:
                 self.save_game()
                 pygame.quit(); exit()
             return
-        
-        if self.state == "WIN":
-            if keys[pygame.K_r]:
-                self.reset_game()
-            if keys[pygame.K_q]:
-                pygame.quit()
-                exit()
-            return
-
         if self.state == "GAMEOVER":
             if keys[pygame.K_r]: self.reset_game()
             if keys[pygame.K_q]: self.state = "MENU"; pygame.quit(); exit() 
@@ -263,7 +254,6 @@ class Game:
         
         if self.state == "CUTSCENE": 
             if self.cutscene_timer > 30:
-                # AANGEPAST: ENTER (Return) of Muis
                 if keys[pygame.K_RETURN] or mouse_clicked:
                     self.end_cutscene_start_boss()
             return
@@ -447,8 +437,9 @@ class Game:
                     e.take_damage(p.damage)
                     hit_enemy = True
                     
+                    # --- AANGEPAST: Particles nu LICHTBLAUW (Zeep) ---
                     for _ in range(12): 
-                        self.particles.append(Particle(e.rect.centerx, e.rect.centery, (200, 0, 0)))
+                        self.particles.append(Particle(e.rect.centerx, e.rect.centery, (135, 206, 250)))
 
                     if e.is_cured:
                         self.player_xp += config.XP_PER_ZOMBIE
