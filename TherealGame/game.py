@@ -8,6 +8,7 @@ from enemy import Enemy
 from projectile import Projectile
 from npc import Teacher
 from item import Item
+from particle import Particle # <--- NIEUW: Importeer je nieuwe file
 
 class Game:
     def __init__(self, screen, load_saved=False):
@@ -42,6 +43,9 @@ class Game:
         self.enemies = []
         self.teachers = []
         self.items = [] 
+        
+        # NIEUW: Lijst voor bloedspetters
+        self.particles = [] 
         
         self.zombie_spawn_timer = config.ZOMBIE_SPAWN_RATE
 
@@ -104,7 +108,7 @@ class Game:
             self.saved_map_name = data.get("saved_map_name", "ground")
             self.current_room_id = data.get("current_room_id", None)
             
-            # Eerst map laden, dan positie zetten (anders overschrijft load_map de positie)
+            # Eerst map laden, dan positie zetten
             self.load_map(self.current_map_name)
             self.player_rect.x = data.get("player_x", 4 * config.TILE_SIZE)
             self.player_rect.y = data.get("player_y", 25 * config.TILE_SIZE)
@@ -122,6 +126,9 @@ class Game:
         self.enemies = []
         self.teachers = []
         self.items = []
+        # Particles wissen bij nieuwe map? Of laten liggen?
+        # Laten we ze wissen voor performance
+        self.particles = []
         
         max_width = 0
         for row_idx, row_string in enumerate(self.map_data_original):
@@ -182,8 +189,6 @@ class Game:
         self.player_rect.x = 4 * self.tile_size
         self.player_rect.y = 25 * self.tile_size
         self.state = "PLAYING"
-        
-        # Save resetten/overschrijven met nieuw begin
         self.save_game()
 
     def spawn_random_zombie(self):
@@ -214,7 +219,6 @@ class Game:
         if self.state == "PAUSED":
             if keys[pygame.K_r]: self.state = "PLAYING" 
             if keys[pygame.K_q]: 
-                # Opslaan bij afsluiten via pauze menu
                 self.save_game()
                 pygame.quit(); exit()
             return
@@ -303,7 +307,7 @@ class Game:
                 elif item.item_type == "key": 
                     self.has_key = True
                     self.show_popup_message("SLEUTEL GEVONDEN!")
-                    self.save_game() # AUTO-SAVE BIJ SLEUTEL
+                    self.save_game()
                     self.items.remove(item)
 
         self.check_events()
@@ -321,6 +325,13 @@ class Game:
 
         for e in self.enemies: e.update(self.player_rect)
         for p in self.projectiles: p.update()
+        
+        # NIEUW: Update particles en verwijder dode
+        for p in self.particles[:]:
+            p.update()
+            if p.lifetime <= 0:
+                self.particles.remove(p)
+
         self.handle_combat()
 
     def show_popup_message(self, msg):
@@ -404,9 +415,14 @@ class Game:
                 if not e.is_cured and p.rect.colliderect(e.rect):
                     e.take_damage(p.damage)
                     hit_enemy = True
+                    
+                    # NIEUW: SPAWN PARTICLES (BLOED)
+                    for _ in range(12): # 12 bloeddruppels
+                        self.particles.append(Particle(e.rect.centerx, e.rect.centery, (200, 0, 0)))
+
                     if e.is_cured and e.is_boss:
                         self.cleared_rooms.append(self.current_room_id)
-                        self.save_game() # AUTO-SAVE BIJ BOSS VERSLAGEN
+                        self.save_game()
                     break 
             if not hit_enemy:
                 projectiles_to_keep.append(p)
@@ -460,7 +476,7 @@ class Game:
                             self.player_rect.y = 13 * self.tile_size
                             self.has_key = False 
                             self.show_popup_message("DEUR GEOPEND!")
-                            self.save_game() # AUTO-SAVE BIJ DEUR
+                            self.save_game()
                         else:
                             if self.popup_timer == 0:
                                 self.show_popup_message("GESLOTEN! ZOEK SLEUTEL")
@@ -477,7 +493,7 @@ class Game:
                     self.load_map("classroom")
                     self.player_rect.x = 9 * self.tile_size 
                     self.player_rect.y = 13 * self.tile_size
-                    self.save_game() # AUTO-SAVE BIJ BINNENKOMST LOKAAL
+                    self.save_game()
             
             elif tile_char == 'E':
                 if self.saved_map_name and self.saved_position is not None:
@@ -485,7 +501,7 @@ class Game:
                     self.player_rect.x, self.player_rect.y = self.saved_position
                     self.saved_position = None
                     self.current_room_id = None
-                    self.save_game() # AUTO-SAVE BIJ VERLATEN LOKAAL
+                    self.save_game()
                 else:
                     self.load_map("ground")
                     self.player_rect.x = 4 * self.tile_size
@@ -495,14 +511,14 @@ class Game:
                 if len(self.cleared_rooms) >= 1: 
                     self.load_map("first")
                     self.player_rect.topleft = self.find_spawn_point('<')
-                    self.save_game() # AUTO-SAVE BIJ TRAP
+                    self.save_game()
                 else:
                      self.player_rect.x -= 10 
 
             elif tile_char == '<':
                 self.load_map("ground")
                 self.player_rect.topleft = self.find_spawn_point('>')
-                self.save_game() # AUTO-SAVE BIJ TRAP
+                self.save_game()
 
     def draw(self):
         self.screen.fill(config.BLACK)
@@ -615,8 +631,12 @@ class Game:
 
         # 3. PROJECTIELEN
         for p in self.projectiles: p.draw(self.screen, camera_x, camera_y)
+        
+        # 4. PARTICLES (bovenop alles!)
+        for p in self.particles:
+            p.draw(self.screen, camera_x, camera_y)
 
-        # 4. HUD
+        # 5. HUD
         bar_width = 200
         hp_percent = self.player_hp / config.PLAYER_HP_MAX
         pygame.draw.rect(self.screen, (50, 50, 50), (20, 20, bar_width, 25))
@@ -644,7 +664,7 @@ class Game:
             key_text = font.render("SLEUTEL", True, (255, 215, 0))
             self.screen.blit(key_text, (70, 138))
 
-        # 5. POP-UP BERICHTEN
+        # 6. POP-UP BERICHTEN (Zoals "Sleutel gevonden")
         if self.popup_timer > 0:
             msg_surf = font.render(self.popup_message, True, (255, 255, 255))
             msg_rect = msg_surf.get_rect(center=(config.SCREEN_WIDTH//2, config.SCREEN_HEIGHT - 100))
