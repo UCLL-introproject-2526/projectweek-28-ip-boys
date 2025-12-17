@@ -1,6 +1,7 @@
 GROUND_FLOOR = [
     "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
     "W..................................................................................W",
+    "W..................................................................................W",
     "W..WWWWWWWWWWWWWWWW..WWWWWWWWWWWWWWWW..WWWWWWWWWWWWWWWW..WWWWWWWWWWWWWWWW..........W",
     "W..W..............W..W..............W..W..............W..W..............W..........W",
     "W..W..............W..W..............W..W..............W..W..............W..........W",
@@ -41,6 +42,7 @@ GROUND_FLOOR = [
 # FIRST_FLOOR
 FIRST_FLOOR = [
     "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+    "W..................................................................................W",
     "W..................................................................................W",
     "W..WWWWWWWWWWWWWWWW..WWWWWWWWWWWWWWWW..WWWWWWWWWWWWWWWW..WWWWWWWWWWWWWWWW..........W",
     "W..W..............W..W..............W..W..............W..W..............W..........W",

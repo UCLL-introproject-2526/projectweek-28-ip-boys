@@ -263,7 +263,8 @@ class Game:
         
         if self.state == "CUTSCENE": 
             if self.cutscene_timer > 30:
-                if keys[pygame.K_SPACE] or mouse_clicked:
+                # AANGEPAST: ENTER (Return) of Muis
+                if keys[pygame.K_RETURN] or mouse_clicked:
                     self.end_cutscene_start_boss()
             return
 
@@ -711,7 +712,7 @@ class Game:
         curr_ammo = self.ammo[curr_wep]
         font = pygame.font.Font(None, 36)
         
-        wep_text = font.render(f"Weapon: {config.WEAPONS[curr_wep]['name']} (G)", True, (255, 255, 255))
+        wep_text = font.render(f"Wapen: {config.WEAPONS[curr_wep]['name']} (G)", True, (255, 255, 255))
         self.screen.blit(wep_text, (20, 60))
         
         ammo_color = (255, 255, 255)
@@ -740,9 +741,9 @@ class Game:
             font = pygame.font.Font(None, 32)
             
             # AANGEPASTE TEKST
-            lines = ["LERAAR: 'Kom maar op student!'", "(Klik of druk SPATIE voor gevecht!)"]
+            lines = ["LERAAR: 'Kom maar op student!'", "(Klik of druk ENTER voor gevecht!)"]
             if self.current_map_name == "director_room":
-                lines = ["DIRECTEUR: 'Eens zien of je slaagt...'", "(Klik of druk SPATIE voor examen!)"]
+                lines = ["DIRECTEUR: 'Eens zien of je slaagt...'", "(Klik of druk ENTER voor examen!)"]
                 
             for i, line in enumerate(lines):
                 text = font.render(line, True, (255, 255, 255))
