@@ -4,9 +4,9 @@ import pygame
 # =========================
 # SCREEN CONFIG
 # =========================
-SCREEN_WIDTH = 1024
-SCREEN_HEIGHT = 768
-FULLSCREEN = False
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
+FULLSCREEN = True
 
 # =========================
 # GAME SETTINGS
@@ -169,5 +169,12 @@ def load_assets():
     print("[KLAAR] Assets geladen!")
 
 def create_screen():
-    if FULLSCREEN: return pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-    else: return pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    if FULLSCREEN:
+        return pygame.display.set_mode(
+            (SCREEN_WIDTH, SCREEN_HEIGHT),
+            pygame.FULLSCREEN | pygame.SCALED
+        )
+    else:
+        return pygame.display.set_mode(
+            (SCREEN_WIDTH, SCREEN_HEIGHT)
+        )
