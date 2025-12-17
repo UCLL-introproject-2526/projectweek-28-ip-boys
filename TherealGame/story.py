@@ -16,7 +16,7 @@ class Story:
 
         # ---- STORY TEKST ----
         self.lines = [
-            "Welcome to UCLL",
+            "Welcome To University Colleges Leuven-Limburg",
             "You'll either survive... or become a teacher",
             "Forget exams! The real challenge is staying alive",
             "AH AH AH AH STAYING ALIVE!",
