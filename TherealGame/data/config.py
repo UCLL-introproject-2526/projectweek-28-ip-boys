@@ -32,7 +32,13 @@ WEAPONS = {
     "pistol": {"damage": 10, "speed": 12, "cooldown": 20, "color": (255, 255, 0), "start_ammo": 100, "name": "PISTOL"},
     "shotgun": {"damage": 100, "speed": 15, "cooldown": 60, "color": (255, 0, 0), "start_ammo": 15, "name": "SHOTGUN"}
 }
+# DIT IS DE KLEINE BUBBEL (PROJECTIEL)
 BULLET_SIZE = 32 
+
+# --- NIEUW: DEFINITIES VOOR DE GEREDDE STUDENT ---
+STUDENT_ICON_SIZE = 126
+# Bubbel is 1.5x zo groot als de student (64 + 32 = 96)
+BUBBLE_LARGE_SIZE =  589
 
 # ITEMS
 ITEM_SIZE = 40          
@@ -63,9 +69,8 @@ HIGHLIGHT_COLOR = (255, 215, 0)
 TEXT_COLOR = (255, 255, 255)
 
 # =========================
-# PATHS (AANGEPAST VOOR DE DATA MAP)
+# PATHS
 # =========================
-# We zitten in /data, dus we moeten een stap omhoog voor de root
 CURRENT_DIR = os.path.dirname(__file__)
 ROOT_DIR = os.path.dirname(CURRENT_DIR) 
 
@@ -90,7 +95,6 @@ def load_assets():
     print("--- ASSETS LADEN ---")
     
     def load_smart(filename_base, w, h, color):
-        # Zoek eerst naar PNG, dan JPG
         full_path = os.path.join(IMAGE_PATH, filename_base + ".png")
         if not os.path.exists(full_path):
             full_path = os.path.join(IMAGE_PATH, filename_base + ".jpg")
@@ -102,7 +106,6 @@ def load_assets():
             except:
                 pass
         
-        # Fallback: gekleurd vierkantje
         s = pygame.Surface((w, h))
         s.fill(color)
         pygame.draw.rect(s, (0,0,0), (0,0,w,h), 2)
@@ -140,7 +143,16 @@ def load_assets():
 
     ASSETS["boss"] = load_smart("boss", 250, 250, (100, 0, 100))
     ASSETS["teacher"] = load_smart("teacher", TILE_SIZE *2, TILE_SIZE *2, WHITE)
+    
+    # --- BUBBELS ---
+    # 1. De kleine voor het schieten (32px)
     ASSETS["projectile"] = load_smart("bubble", BULLET_SIZE, BULLET_SIZE, (0, 255, 255))
+    
+    # 2. De grote voor de geredde student (96px) - laadt DEZELFDE png, maar schaalt groter
+    ASSETS["bubble_large"] = load_smart("bubble", BUBBLE_LARGE_SIZE, BUBBLE_LARGE_SIZE, (0, 255, 255))
+
+    # 3. De Student in de bubbel (64px)
+    ASSETS["student_icon"] = load_smart("student_icon", STUDENT_ICON_SIZE, STUDENT_ICON_SIZE, (0, 0, 255))
 
     # Environment
     ASSETS["wall"] = load_smart("wall", TILE_SIZE, WALL_HEIGHT, (100, 100, 100))
