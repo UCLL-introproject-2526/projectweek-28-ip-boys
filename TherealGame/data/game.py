@@ -554,10 +554,10 @@ class Game:
             self.ui.draw_cutscene_overlay(self.current_map_name)
             self.cutscene_timer += 1
         elif self.state == "PAUSED":
-            self.ui.draw_full_screen_popup("PAUZE", ["R - Verder spelen", "Q - Stoppen"], (40, 40, 60))
+            self.ui.draw_full_screen_popup("PAUSE", ["R - Continue", "Q - Quit"], (40, 40, 60))
         elif self.state == "GAMEOVER":
-            self.ui.draw_full_screen_popup("GAME OVER", ["R - Opnieuw proberen", "Q - Afsluiten"], (60, 20, 20))
+            self.ui.draw_full_screen_popup("GAME OVER", ["R - Try again", "Q - Quit"], (60, 20, 20))
         elif self.state == "WIN":
-            self.ui.draw_full_screen_popup("YOU GRADUATED 🎓",["R - Opnieuw spelen", "Q - Afsluiten"],(20, 100, 20))
+            self.ui.draw_full_screen_popup("YOU GRADUATED 🎓",["R - Continue", "Q - Quit"],(20, 100, 20))
 
         pygame.display.flip()
