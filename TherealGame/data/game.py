@@ -543,10 +543,6 @@ class Game:
                     img = config.ASSETS.get("door")
                     if img: self.screen.blit(img, (x, y))
                     else: pygame.draw.rect(self.screen, (0,0,255), (x, y, self.tile_size, self.tile_size))
-                    if char != 'E':
-                         font = pygame.font.Font(None, 36)
-                         text = font.render(char, True, (255,255,255))
-                         self.screen.blit(text, (x+20, y+20))
                 elif char == 'L':
                     img = config.ASSETS.get("locked_door")
                     if img: self.screen.blit(img, (x, y))
