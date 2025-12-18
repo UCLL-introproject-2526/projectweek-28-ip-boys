@@ -3,19 +3,15 @@ import random
 import json
 import os
 
-<<<<<<< HEAD
-=======
 from sklearn import neighbors
 
 # Imports uit de data map
->>>>>>> 5e625b2666e9fe084464ef1ffdbd326ec00eb0ed
 from data import config
 from data import UCLL_maps as maps
 from data.enemy import Enemy
 from data.npc import Teacher
 from data.item import Item
-# LET OP: We importeren nu ook CuredStudent!
-from data.particle import Particle, CuredStudent
+from data.particle import Particle
 from data.player import Player
 from data.ui import UI
 
@@ -38,7 +34,7 @@ class Game:
         self.enemies = []
         self.teachers = []
         self.items = [] 
-        self.particles = [] # Hier komen zowel Splat particles als CuredStudents in
+        self.particles = [] 
         
         self.screen_shake = 0 
         self.zombie_spawn_timer = self.zombie_spawn_rate
@@ -332,22 +328,9 @@ class Game:
                 if not e.is_cured and p.rect.colliderect(e.rect):
                     e.take_damage(p.damage)
                     hit_enemy = True
-                    
-                    # Klein hit effectje (wit/blauw)
-                    for _ in range(3): 
-                         self.particles.append(Particle(e.rect.centerx, e.rect.centery, (200, 200, 255)))
-
+                    for _ in range(12): 
+                        self.particles.append(Particle(e.rect.centerx, e.rect.centery, (135, 206, 250)))
                     if e.is_cured:
-                        # --- HIER IS DE MAGIE: SPLAT & BUBBEL ---
-                        
-                        # 1. SPLAT! (Veel particles, paars/groen slijm effect)
-                        for _ in range(25):
-                            splat_color = random.choice([(100, 200, 100), (50, 150, 50), (200, 0, 200)])
-                            self.particles.append(Particle(e.rect.centerx, e.rect.centery, splat_color, speed_range=6, size_range=8))
-                        
-                        # 2. SPAWN DE GEREDDE STUDENT (bubbel die omhoog vliegt)
-                        self.particles.append(CuredStudent(e.rect.centerx, e.rect.centery))
-
                         self.player.xp += config.XP_PER_ZOMBIE
                         if e.is_boss:
                             if self.current_map_name == "director_room":
@@ -361,11 +344,6 @@ class Game:
             if not hit_enemy:
                 projectiles_to_keep.append(p)
         self.projectiles = projectiles_to_keep
-        
-        # Verwijder genezen vijanden uit de lijst
-        # (Omdat we nu een CuredStudent in de particles lijst stoppen, 
-        # hoeven we de Enemy niet meer te bewaren voor de tekening)
-        self.enemies = [e for e in self.enemies if not e.is_cured]
 
         # Player Hit
         for e in self.enemies:
