@@ -397,11 +397,11 @@ class Game:
                             self.player.rect.x = 9 * self.tile_size 
                             self.player.rect.y = 8 * self.tile_size 
                             self.player.has_key = False 
-                            self.show_popup_message("DEUR GEOPEND!")
+                            self.show_popup_message("DOOR OPENED!")
                             self.save_game()
                         else:
                             if self.popup_timer == 0:
-                                self.show_popup_message("GESLOTEN! ZOEK SLEUTEL")
+                                self.show_popup_message("CLOSED! SEARCH FOR A KEY")
 
         if 0 <= row < len(self.map_data) and 0 <= col < len(self.map_data[row]):
             tile_char = self.map_data[row][col]
@@ -420,7 +420,7 @@ class Game:
             elif tile_char == 'E':
                 active_enemies = [e for e in self.enemies if not e.is_cured]
                 if len(active_enemies) > 0:
-                    if self.popup_timer == 0: self.show_popup_message("VERSLA EERST DE BAAS!")
+                    if self.popup_timer == 0: self.show_popup_message("BEAT THE BOSS FIRST!")
                 else:
                     if self.saved_map_name and self.saved_position is not None:
                         self.load_map(self.saved_map_name)
