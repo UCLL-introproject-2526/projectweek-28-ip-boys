@@ -29,7 +29,7 @@ class UI:
         
         ammo_color = (255, 255, 255)
         if curr_ammo == 0: ammo_color = (255, 0, 0)
-        ammo_text = self.font.render(f"Ammo: {curr_ammo}", True, ammo_color)
+        ammo_text = self.font.render(f"AMMO: {curr_ammo}", True, ammo_color)
         self.screen.blit(ammo_text, (20, 90))
         
         # XP Info
