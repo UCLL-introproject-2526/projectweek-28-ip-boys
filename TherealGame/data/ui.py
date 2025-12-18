@@ -55,7 +55,7 @@ class UI:
         pygame.draw.rect(self.screen, (0, 0, 0), (50, config.SCREEN_HEIGHT - 160, config.SCREEN_WIDTH - 100, 150))
         pygame.draw.rect(self.screen, (255, 255, 255), (50, config.SCREEN_HEIGHT - 160, config.SCREEN_WIDTH - 100, 150), 3)
         
-        lines = ["TEACHER: 'TRY ME, STUDENT!'", "(CLICK ON ENTER FOR A FIGHT!)"]
+        lines = ["TEACHER: TRY ME STUDENT!", "(CLICK ENTER FOR A FIGHT!)"]
         if map_name == "PRINCIPAL_ROOM":
             lines = ["PRINCIPAL: 'LET'S SEE IF U CAN SUCCEED...'", "(CLICK ON ENTER FOR A FIGHT!)"]
             
