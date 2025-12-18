@@ -433,18 +433,50 @@ class Game:
                         self.player.rect.x = 4 * self.tile_size
                         self.player.rect.y = 25 * self.tile_size
             
-            elif tile_char == '>': 
-                if len(self.cleared_rooms) >= 1: 
-                    self.load_map("first")
-                    self.player.rect.topleft = self.find_spawn_point('<')
-                    self.save_game() 
-                else:
-                     self.player.rect.x -= 10 
+            # ===============================
+            # TRAPPEN (UP & DOWN) – NEIGHBOR BASED
+            # ===============================
 
-            elif tile_char == '<':
-                self.load_map("ground")
-                self.player.rect.topleft = self.find_spawn_point('>')
-                self.save_game() 
+            # --- TRAP NAAR VOLGENDE VERDIEPING (>) ---
+            for nr, nc in neighbors:
+                if 0 <= nr < len(self.map_data) and 0 <= nc < len(self.map_data[nr]):
+                    if self.map_data[nr][nc] == '>':
+                        stair_rect = pygame.Rect(
+                            nc * self.tile_size,
+                            nr * self.tile_size,
+                            self.tile_size,
+                            self.tile_size
+                        )
+
+                        if self.player.rect.colliderect(stair_rect.inflate(10, 10)):
+                            if len(self.cleared_rooms) < 6:
+                                if self.popup_timer == 0:
+                                    self.show_popup_message("First defeat all bosses!")
+                                    return
+                            else:
+                                self.load_map("first")
+                                self.player.rect.topleft = self.find_spawn_point('<')
+                                self.save_game()
+                                return
+
+
+                # --- TRAP TERUG NAAR BENEDEN (<) ---
+                for nr, nc in neighbors:
+                    if 0 <= nr < len(self.map_data) and 0 <= nc < len(self.map_data[nr]):
+                        if self.map_data[nr][nc] == '<':
+                            stair_rect = pygame.Rect(
+                                nc * self.tile_size,
+                                nr * self.tile_size,
+                                self.tile_size,
+                                self.tile_size
+                            )
+
+                            if self.player.rect.colliderect(stair_rect.inflate(10, 10)):
+                                self.load_map("ground")
+                                self.player.rect.topleft = self.find_spawn_point('>')
+                                self.save_game()
+                                return
+
 
     def draw(self):
         self.screen.fill(config.BLACK)
