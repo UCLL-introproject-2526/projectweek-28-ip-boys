@@ -406,7 +406,7 @@ class Game:
         if 0 <= row < len(self.map_data) and 0 <= col < len(self.map_data[row]):
             tile_char = self.map_data[row][col]
             
-            if tile_char in ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']:
+            if tile_char in ['1','2','3','4','5','6']:
                 room_id = tile_char
                 if room_id not in self.cleared_rooms:
                     self.saved_map_name = self.current_map_name
@@ -416,6 +416,22 @@ class Game:
                     self.player.rect.x = 9 * self.tile_size 
                     self.player.rect.y = 12 * self.tile_size 
                     self.save_game()
+
+            elif tile_char == '7':
+                if self.player.has_key:
+                    self.saved_map_name = self.current_map_name
+                    self.saved_position = (self.player.rect.x, self.player.rect.y)
+                    self.current_room_id = "director_room"
+                    self.load_map("director_room")
+                    self.player.rect.x = 9 * self.tile_size
+                    self.player.rect.y = 8 * self.tile_size
+                    self.player.has_key = False
+                    self.show_popup_message("DOOR OPENED!")
+                    self.save_game()
+                else:
+                    if self.popup_timer == 0:
+                        self.show_popup_message("CLOSED! SEARCH FOR A KEY")
+
             
             elif tile_char == 'E':
                 active_enemies = [e for e in self.enemies if not e.is_cured]
