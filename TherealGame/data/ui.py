@@ -24,7 +24,7 @@ class UI:
         curr_wep = player.weapons_owned[player.current_weapon_index]
         curr_ammo = player.ammo[curr_wep]
         
-        wep_text = self.font.render(f"Wapen: {config.WEAPONS[curr_wep]['name']} (G)", True, (255, 255, 255))
+        wep_text = self.font.render(f"WEAPON: {config.WEAPONS[curr_wep]['name']} (G)", True, (255, 255, 255))
         self.screen.blit(wep_text, (20, 60))
         
         ammo_color = (255, 255, 255)
