@@ -53,7 +53,7 @@ BOSS_HP = 500
 NORMAL_HP = 30
 ZOMBIE_SPAWN_RATE = 300 
 
-DIRECTOR_SIZE = 300 
+DIRECTOR_SIZE = 128 
 
 # =========================
 # COLORS
