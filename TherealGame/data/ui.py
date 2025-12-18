@@ -24,12 +24,12 @@ class UI:
         curr_wep = player.weapons_owned[player.current_weapon_index]
         curr_ammo = player.ammo[curr_wep]
         
-        wep_text = self.font.render(f"Wapen: {config.WEAPONS[curr_wep]['name']} (G)", True, (255, 255, 255))
+        wep_text = self.font.render(f"WEAPON: {config.WEAPONS[curr_wep]['name']} (G)", True, (255, 255, 255))
         self.screen.blit(wep_text, (20, 60))
         
         ammo_color = (255, 255, 255)
         if curr_ammo == 0: ammo_color = (255, 0, 0)
-        ammo_text = self.font.render(f"Ammo: {curr_ammo}", True, ammo_color)
+        ammo_text = self.font.render(f"AMMO: {curr_ammo}", True, ammo_color)
         self.screen.blit(ammo_text, (20, 90))
         
         # XP Info

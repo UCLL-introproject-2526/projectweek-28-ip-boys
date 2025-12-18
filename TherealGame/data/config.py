@@ -29,7 +29,7 @@ XP_PER_ZOMBIE = 10
 
 # WAPENS
 WEAPONS = {
-    "pistol": {"damage": 10, "speed": 12, "cooldown": 20, "color": (255, 255, 0), "start_ammo": 100, "name": "Pistool"},
+    "pistol": {"damage": 10, "speed": 12, "cooldown": 20, "color": (255, 255, 0), "start_ammo": 100, "name": "PISTOL"},
     "shotgun": {"damage": 100, "speed": 15, "cooldown": 60, "color": (255, 0, 0), "start_ammo": 15, "name": "SHOTGUN"}
 }
 # DIT IS DE KLEINE BUBBEL (PROJECTIEL)
@@ -159,7 +159,7 @@ def load_assets():
     ASSETS["floor"] = load_smart("floor", TILE_SIZE, TILE_SIZE, (50, 50, 50))
     ASSETS["door"] = load_smart("door", TILE_SIZE, TILE_SIZE, (0, 0, 150))
     ASSETS["locked_door"] = load_smart("locked_door", TILE_SIZE, TILE_SIZE, (150, 0, 0))
-    ASSETS["stairs"] = load_smart("stairs", TILE_SIZE, TILE_SIZE, (200, 200, 0))
+    ASSETS["stairs"] = load_smart("stairs", TILE_SIZE, TILE_SIZE*2, (200, 200, 0))
     ASSETS["student_bench"] = load_smart("bench", TILE_SIZE, TILE_SIZE, (139, 69, 19))
 
     # Items
