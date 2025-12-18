@@ -3,12 +3,6 @@ import random
 import json
 import os
 
-<<<<<<< HEAD
-=======
-from sklearn import neighbors
-
-# Imports uit de data map
->>>>>>> 5e625b2666e9fe084464ef1ffdbd326ec00eb0ed
 from data import config
 from data import UCLL_maps as maps
 from data.enemy import Enemy
@@ -433,43 +427,18 @@ class Game:
                         self.player.rect.x = 4 * self.tile_size
                         self.player.rect.y = 25 * self.tile_size
             
-            # --- TRAP NAAR VOLGENDE VERDIEPING ---
-            for nr, nc in neighbors:
-                if 0 <= nr < len(self.map_data) and 0 <= nc < len(self.map_data[nr]):
-                    if self.map_data[nr][nc] == '>':
-                        stair_rect = pygame.Rect(
-                            nc * self.tile_size,
-                            nr * self.tile_size,
-                            self.tile_size,
-                            self.tile_size
-                        )
-                        if self.player.rect.colliderect(stair_rect.inflate(10, 10)):
-                            if len(self.cleared_rooms) < 6:
-                                if self.popup_timer == 0:
-                                    self.show_popup_message("First defeat all bosses!")
-                                    return
-                            else:
-                                self.load_map("first")
-                                self.player.rect.topleft = self.find_spawn_point('<')
-                                self.save_game()
-                                return
+            elif tile_char == '>': 
+                if len(self.cleared_rooms) >= 1: 
+                    self.load_map("first")
+                    self.player.rect.topleft = self.find_spawn_point('<')
+                    self.save_game() 
+                else:
+                     self.player.rect.x -= 10 
 
-            # --- TRAP TERUG NAAR BENEDEN ---
-            for nr, nc in neighbors:
-                if 0 <= nr < len(self.map_data) and 0 <= nc < len(self.map_data[nr]):
-                    if self.map_data[nr][nc] == '<':
-                        stair_rect = pygame.Rect(
-                            nc * self.tile_size,
-                            nr * self.tile_size,
-                            self.tile_size,
-                            self.tile_size
-                        )   
-                        if self.player.rect.colliderect(stair_rect.inflate(10, 10)):
-                            self.load_map("ground")
-                            self.player.rect.topleft = self.find_spawn_point('>')
-                            self.save_game()
-                            return  
-
+            elif tile_char == '<':
+                self.load_map("ground")
+                self.player.rect.topleft = self.find_spawn_point('>')
+                self.save_game() 
 
     def draw(self):
         self.screen.fill(config.BLACK)
@@ -579,10 +548,10 @@ class Game:
             self.ui.draw_cutscene_overlay(self.current_map_name)
             self.cutscene_timer += 1
         elif self.state == "PAUSED":
-            self.ui.draw_full_screen_popup("PAUSE", ["C- CONTINUE", "Q - QUIT"], (40, 40, 60))
+            self.ui.draw_full_screen_popup("PAUZE", ["R - Verder spelen", "Q - Stoppen"], (40, 40, 60))
         elif self.state == "GAMEOVER":
-            self.ui.draw_full_screen_popup("GAME OVER", ["R - TRY AGAIN!", "Q - QUIT"], (60, 20, 20))
+            self.ui.draw_full_screen_popup("GAME OVER", ["R - Opnieuw proberen", "Q - Afsluiten"], (60, 20, 20))
         elif self.state == "WIN":
-            self.ui.draw_full_screen_popup("YOU GRADUATED 🎓",["R - RESTART", "Q - QUIT"],(20, 100, 20))
+            self.ui.draw_full_screen_popup("YOU GRADUATED 🎓",["R - Opnieuw spelen", "Q - Afsluiten"],(20, 100, 20))
 
         pygame.display.flip()
