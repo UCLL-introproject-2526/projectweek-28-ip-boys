@@ -1,7 +1,7 @@
 import pygame
 import random
-import config
-from collections import deque 
+from collections import deque
+from data import config
 
 class Enemy:
     def __init__(self, x, y, map_data, is_boss=False):
@@ -11,18 +11,15 @@ class Enemy:
         self.is_boss = is_boss
         
         self.hp = config.BOSS_HP if is_boss else config.NORMAL_HP
-        self.max_hp = self.hp # NIEUW: Onthoud wat de MAX HP is bij start
+        self.max_hp = self.hp 
         
         self.alive = True
         self.is_cured = False 
-        
         self.chase_radius = 400 if is_boss else 200
         self.speed = config.ENEMY_SPEED
-        
         self.direction = (0, 0)
         self.move_timer = 0
         self.change_direction()
-        
         self.facing_right = True 
         
         # AI
@@ -108,8 +105,7 @@ class Enemy:
             if 0 <= row < len(self.map_data):
                 if 0 <= col < len(self.map_data[row]):
                     tile = self.map_data[row][col]
-                    if tile == 'W' or tile == 'b' or tile == 'B' or tile == 'L': 
-                        return True 
+                    if tile in ['W', 'b', 'B', 'L']: return True 
             else:
                 return True 
         return False
@@ -127,7 +123,7 @@ class Enemy:
         move_x = 0
         move_y = 0
 
-        # --- BOSS LOGICA ---
+        # BOSS AI
         if self.is_boss and self.triggered:
             direct_move_x = 0
             direct_move_y = 0
@@ -161,7 +157,7 @@ class Enemy:
                     move_x = direct_move_x
                     move_y = direct_move_y
 
-        # --- NORMALE ZOMBIE LOGICA ---
+        # ZOMBIE AI
         elif distance < self.chase_radius:
             if distance > 0:
                 move_x = (dx / distance) * self.speed
@@ -189,8 +185,7 @@ class Enemy:
             if 0 <= row < len(self.map_data):
                 if 0 <= col < len(self.map_data[row]):
                     tile = self.map_data[row][col]
-                    if tile == 'W' or tile == 'b' or tile == 'B' or tile == 'L': 
-                        return True
+                    if tile in ['W', 'b', 'B', 'L']: return True
             else:
                 return True
         return False
@@ -220,8 +215,6 @@ class Enemy:
                 if sprite: screen.blit(sprite, (draw_x, draw_y))
                 else: pygame.draw.rect(screen, (0, 255, 0), (draw_x, draw_y, self.rect.width, self.rect.height))
 
-            # HEALTH BAR AANGEPAST
-            # Gebruik self.max_hp in plaats van config.BOSS_HP
             hp_percent = self.hp / self.max_hp
             if hp_percent < 0: hp_percent = 0
             

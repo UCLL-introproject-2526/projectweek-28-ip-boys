@@ -6,7 +6,6 @@ class Particle:
         self.x = x
         self.y = y
         self.color = color
-        # Willekeurige snelheid
         self.dx = random.uniform(-speed_range, speed_range)
         self.dy = random.uniform(-speed_range, speed_range)
         self.size = random.randint(2, size_range)
@@ -17,7 +16,6 @@ class Particle:
         self.x += self.dx
         self.y += self.dy
         self.lifetime -= 1
-        # Maak ze kleiner als ze sterven (plop!)
         if self.lifetime < 10:
             self.size = max(0, self.size - 0.2)
 
@@ -25,10 +23,6 @@ class Particle:
         if self.lifetime > 0 and self.size > 0:
             draw_x = int(self.x - camera_x)
             draw_y = int(self.y - camera_y)
-            
-            # Teken een cirkel (Zeepbel) in plaats van een vierkant
             pygame.draw.circle(screen, self.color, (draw_x, draw_y), int(self.size))
-            
-            # Optioneel: Een klein wit randje voor extra zeep-effect
             if self.size > 2:
                 pygame.draw.circle(screen, (255, 255, 255), (draw_x, draw_y), int(self.size), 1)

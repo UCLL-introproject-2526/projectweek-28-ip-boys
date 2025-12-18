@@ -1,10 +1,10 @@
 import pygame
-import config
+from data import config
 
 class Item:
     def __init__(self, x, y, item_type):
         self.rect = pygame.Rect(x + 16, y + 16, config.ITEM_SIZE, config.ITEM_SIZE) 
-        self.item_type = item_type # "health", "ammo", "shotgun", "key"
+        self.item_type = item_type
         self.start_y = y 
         self.float_offset = 0
         self.float_direction = 0.5
@@ -13,8 +13,6 @@ class Item:
         self.float_offset += self.float_direction
         if abs(self.float_offset) > 5: self.float_direction *= -1
         
-        # Centreer het GROTE plaatje (Visual Size) op de KLEINE hitbox (Rect)
-        # Formule: (Groot - Klein) / 2 = Offset
         offset_x = (config.ITEM_VISUAL_SIZE - config.ITEM_SIZE) // 2
         offset_y = (config.ITEM_VISUAL_SIZE - config.ITEM_SIZE) // 2
         
