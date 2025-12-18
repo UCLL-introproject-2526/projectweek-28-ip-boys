@@ -39,7 +39,7 @@ class UI:
         # Sleutel
         if player.has_key:
             pygame.draw.rect(self.screen, (255, 215, 0), (20, 130, 40, 40)) 
-            key_text = self.font.render("SLEUTEL", True, (255, 215, 0))
+            key_text = self.font.render("KEY", True, (255, 215, 0))
             self.screen.blit(key_text, (70, 138))
 
     def draw_popup_message(self, message):
