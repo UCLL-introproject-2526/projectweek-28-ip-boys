@@ -4,18 +4,25 @@ from collections import deque
 from data import config
 
 class Enemy:
-    def __init__(self, x, y, map_data, is_boss=False):
-        size = config.BOSS_SIZE if is_boss else config.ENEMY_SIZE
+    # AANGEPAST: Nieuwe parameters 'custom_size' en 'image_key'
+    def __init__(self, x, y, map_data, is_boss=False, custom_size=None, image_key=None):
+        # Bepaal grootte
+        if custom_size:
+            size = custom_size
+        else:
+            size = config.BOSS_SIZE if is_boss else config.ENEMY_SIZE
+            
         self.rect = pygame.Rect(x, y, size, size)
         self.map_data = map_data
         self.is_boss = is_boss
+        self.image_key = image_key # Specifiek plaatje (bijv "director_boss")
         
         self.hp = config.BOSS_HP if is_boss else config.NORMAL_HP
         self.max_hp = self.hp 
         
         self.alive = True
         self.is_cured = False 
-        self.chase_radius = 400 if is_boss else 200
+        self.chase_radius = 600 if is_boss else 200 # Boss ziet je van verder
         self.speed = config.ENEMY_SPEED
         self.direction = (0, 0)
         self.move_timer = 0
@@ -195,17 +202,23 @@ class Enemy:
         draw_y = self.rect.y - camera_y
 
         if self.is_cured:
+            # Dit wordt nu afgehandeld door particles, maar voor de zekerheid:
             pygame.draw.circle(screen, config.BUBBLE_COLOR, 
                              (draw_x + self.rect.width//2, draw_y + self.rect.height//2), 
                              self.rect.width//2, 2)
-            pygame.draw.circle(screen, (255, 200, 200), 
-                             (draw_x + self.rect.width//2, draw_y + self.rect.height//2), 10)
         else:
-            if self.is_boss:
+            # 1. Check of er een custom image key is (voor de Directeur)
+            if self.image_key and self.image_key in config.ASSETS:
+                screen.blit(config.ASSETS[self.image_key], (draw_x, draw_y))
+            
+            # 2. Check voor standaard boss
+            elif self.is_boss:
                 if "boss" in config.ASSETS:
                     screen.blit(config.ASSETS["boss"], (draw_x, draw_y))
                 else:
                     pygame.draw.rect(screen, (100, 0, 100), (draw_x, draw_y, self.rect.width, self.rect.height))
+            
+            # 3. Standaard vijand
             else:
                 sprite = None
                 if self.facing_right: sprite = config.ASSETS.get("enemy_right")
@@ -215,6 +228,7 @@ class Enemy:
                 if sprite: screen.blit(sprite, (draw_x, draw_y))
                 else: pygame.draw.rect(screen, (0, 255, 0), (draw_x, draw_y, self.rect.width, self.rect.height))
 
+            # Health Bar
             hp_percent = self.hp / self.max_hp
             if hp_percent < 0: hp_percent = 0
             

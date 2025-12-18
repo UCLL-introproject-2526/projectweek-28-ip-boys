@@ -53,6 +53,8 @@ BOSS_HP = 500
 NORMAL_HP = 30
 ZOMBIE_SPAWN_RATE = 300 
 
+DIRECTOR_SIZE = 128 
+
 # =========================
 # COLORS
 # =========================
@@ -145,6 +147,7 @@ def load_assets():
     ASSETS["teacher"] = load_smart("teacher", TILE_SIZE *2, TILE_SIZE *2, WHITE)
     # Zorg dat je director.png hebt, anders krijg je een zwart blokje
     ASSETS["director"] = load_smart("director", TILE_SIZE *2, TILE_SIZE *2, (0, 0, 0))
+    ASSETS["director"] = load_smart("director", DIRECTOR_SIZE, DIRECTOR_SIZE, (0, 0, 0))
 
     # Bubbels
     ASSETS["projectile"] = load_smart("bubble", BULLET_SIZE, BULLET_SIZE, (0, 255, 255))
