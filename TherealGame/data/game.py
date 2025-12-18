@@ -545,7 +545,7 @@ class Game:
             self.ui.draw_cutscene_overlay(self.current_map_name)
             self.cutscene_timer += 1
         elif self.state == "PAUSED":
-            self.ui.draw_full_screen_popup("PAUSE", ["C- CONTINUE", "Q - QUIT"], (40, 40, 60))
+            self.ui.draw_full_screen_popup("PAUSE", ["R - CONTINUE", "Q - QUIT"], (40, 40, 60))
         elif self.state == "GAMEOVER":
             self.ui.draw_full_screen_popup("GAME OVER", ["R - TRY AGAIN!", "Q - QUIT"], (60, 20, 20))
         elif self.state == "WIN":
