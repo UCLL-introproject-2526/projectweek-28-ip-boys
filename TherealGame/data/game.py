@@ -3,7 +3,7 @@ import random
 import json
 import os
 
-from sklearn import neighbors
+
 
 from data import config
 from data import UCLL_maps as maps
