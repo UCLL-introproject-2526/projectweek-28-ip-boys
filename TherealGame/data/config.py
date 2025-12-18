@@ -29,16 +29,14 @@ XP_PER_ZOMBIE = 10
 
 # WAPENS
 WEAPONS = {
-    "pistol": {"damage": 10, "speed": 12, "cooldown": 20, "color": (255, 255, 0), "start_ammo": 100, "name": "PISTOL"},
+    "pistol": {"damage": 10, "speed": 12, "cooldown": 20, "color": (255, 255, 0), "start_ammo": 100, "name": "Pistool"},
     "shotgun": {"damage": 100, "speed": 15, "cooldown": 60, "color": (255, 0, 0), "start_ammo": 15, "name": "SHOTGUN"}
 }
-# DIT IS DE KLEINE BUBBEL (PROJECTIEL)
 BULLET_SIZE = 32 
 
-# --- NIEUW: DEFINITIES VOOR DE GEREDDE STUDENT ---
-STUDENT_ICON_SIZE = 126
-# Bubbel is 1.5x zo groot als de student (64 + 32 = 96)
-BUBBLE_LARGE_SIZE =  589
+# --- DEFINITIES VOOR DE GEREDDE STUDENT ---
+STUDENT_ICON_SIZE = 80
+BUBBLE_LARGE_SIZE = 140 
 
 # ITEMS
 ITEM_SIZE = 40          
@@ -142,16 +140,15 @@ def load_assets():
     ASSETS["enemy"] = monster 
 
     ASSETS["boss"] = load_smart("boss", 250, 250, (100, 0, 100))
+    
+    # --- NIEUW: APARTE SPRITES VOOR LERAAR EN DIRECTEUR ---
     ASSETS["teacher"] = load_smart("teacher", TILE_SIZE *2, TILE_SIZE *2, WHITE)
-    
-    # --- BUBBELS ---
-    # 1. De kleine voor het schieten (32px)
-    ASSETS["projectile"] = load_smart("bubble", BULLET_SIZE, BULLET_SIZE, (0, 255, 255))
-    
-    # 2. De grote voor de geredde student (96px) - laadt DEZELFDE png, maar schaalt groter
-    ASSETS["bubble_large"] = load_smart("bubble", BUBBLE_LARGE_SIZE, BUBBLE_LARGE_SIZE, (0, 255, 255))
+    # Zorg dat je director.png hebt, anders krijg je een zwart blokje
+    ASSETS["director"] = load_smart("director", TILE_SIZE *2, TILE_SIZE *2, (0, 0, 0))
 
-    # 3. De Student in de bubbel (64px)
+    # Bubbels
+    ASSETS["projectile"] = load_smart("bubble", BULLET_SIZE, BULLET_SIZE, (0, 255, 255))
+    ASSETS["bubble_large"] = load_smart("bubble", BUBBLE_LARGE_SIZE, BUBBLE_LARGE_SIZE, (0, 200, 255))
     ASSETS["student_icon"] = load_smart("student_icon", STUDENT_ICON_SIZE, STUDENT_ICON_SIZE, (0, 0, 255))
 
     # Environment
@@ -159,7 +156,7 @@ def load_assets():
     ASSETS["floor"] = load_smart("floor", TILE_SIZE, TILE_SIZE, (50, 50, 50))
     ASSETS["door"] = load_smart("door", TILE_SIZE, TILE_SIZE, (0, 0, 150))
     ASSETS["locked_door"] = load_smart("locked_door", TILE_SIZE, TILE_SIZE, (150, 0, 0))
-    ASSETS["stairs"] = load_smart("stairs", TILE_SIZE, TILE_SIZE*2, (200, 200, 0))
+    ASSETS["stairs"] = load_smart("stairs", TILE_SIZE, TILE_SIZE, (200, 200, 0))
     ASSETS["student_bench"] = load_smart("bench", TILE_SIZE, TILE_SIZE, (139, 69, 19))
 
     # Items
