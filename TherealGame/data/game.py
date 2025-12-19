@@ -536,6 +536,49 @@ class Game:
                                 self.save_game()
                                 return
 
+    def draw_minimap(self):
+        TILE = 3          # grootte van 1 tile op de mini-map
+        PADDING = 10      # afstand tot schermrand
+
+        map_rows = len(self.map_data)
+        map_cols = max(len(row) for row in self.map_data)
+
+        start_x = config.SCREEN_WIDTH - (map_cols * TILE) - PADDING
+        start_y = PADDING
+
+        # Achtergrond
+        pygame.draw.rect(
+            self.screen,
+            (20, 20, 20),
+            (start_x - 5, start_y - 5, map_cols * TILE + 10, map_rows * TILE + 10)
+        )
+
+        # Map tiles
+        for row_idx, row in enumerate(self.map_data):
+            for col_idx, char in enumerate(row):
+                x = start_x + col_idx * TILE
+                y = start_y + row_idx * TILE
+
+                if char == 'W':
+                    color = (80, 80, 80)          # muur
+                elif char in ['L', 'E', '1','2','3','4','5','6']:
+                    color = (0, 0, 200)           # deur
+                elif char in ['>', '<']:
+                    color = (200, 200, 0)         # trap
+                else:
+                    color = (40, 40, 40)          # vloer
+
+                pygame.draw.rect(self.screen, color, (x, y, TILE, TILE))
+
+        # Speler
+        p_col = int(self.player.rect.centerx // self.tile_size)
+        p_row = int(self.player.rect.centery // self.tile_size)
+
+        px = start_x + p_col * TILE
+        py = start_y + p_row * TILE
+
+        pygame.draw.rect(self.screen, (0, 255, 0), (px, py, TILE, TILE))
+
 
     def draw(self):
         self.screen.fill(config.BLACK)
@@ -567,8 +610,10 @@ class Game:
             for col in range(start_col, min(end_col, current_row_len)):
                 x = (col * self.tile_size) - camera_x
                 y = (row * self.tile_size) - camera_y
-                if "floor" in config.ASSETS: self.screen.blit(config.ASSETS["floor"], (x, y))
-                else: pygame.draw.rect(self.screen, (100,100,100), (x, y, self.tile_size, self.tile_size))
+                if "floor" in config.ASSETS: 
+                    self.screen.blit(config.ASSETS["floor"], (x, y))
+                else: 
+                    pygame.draw.rect(self.screen, (100,100,100), (x, y, self.tile_size, self.tile_size))
 
         # Entities
         # KEYWORD: DEPTH SORTING
@@ -658,5 +703,16 @@ class Game:
             self.ui.draw_full_screen_popup("GAME OVER", ["R - Try again", "Q - Quit"], (60, 20, 20))
         elif self.state == "WIN":
             self.ui.draw_full_screen_popup("YOU GRADUATED 🎓",["R - Continue", "Q - Quit"],(20, 100, 20))
+
+        self.draw_minimap()
+
+        # UI
+        self.ui.draw_hud(self.player)
+
+        if self.popup_timer > 0:
+            self.ui.draw_popup_message(self.popup_message)
+
+        # 👇 HIER IS DE JUISTE PLAATS
+        self.draw_minimap()
 
         pygame.display.flip()
