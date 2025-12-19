@@ -34,7 +34,7 @@ XP_PER_ZOMBIE = 10
 # WAPENS
 WEAPONS = {
     "pistol": {"damage": 10, "speed": 12, "cooldown": 20, "color": (255, 255, 0), "start_ammo": 100, "name": "PISTOL"},
-    "shotgun": {"damage": 100, "speed": 15, "cooldown": 60, "color": (255, 0, 0), "start_ammo": 15, "name": "SHOTGUN"}
+    "shotgun": {"damage": 50, "speed": 15, "cooldown": 60, "color": (255, 0, 0), "start_ammo": 2, "name": "SHOTGUN"}
 }
 BULLET_SIZE = 32 
 
