@@ -326,8 +326,19 @@ class Game:
             if self.active_teacher in self.teachers:
                 self.teachers.remove(self.active_teacher)
                 boss_x, boss_y = self.active_teacher.rect.x, self.active_teacher.rect.y
-                boss = Enemy(boss_x, boss_y, self.map_data_original, is_boss=True)
                 
+                # --- AANGEPAST ---
+                # Bepaal hier welk plaatje de baas moet krijgen
+                current_image_key = None # Standaard baas (paars blok)
+                
+                if self.current_map_name == "director_room":
+                    # Als we bij de directeur zijn, gebruik de nieuwe "director_boss" sprite
+                    current_image_key = "director_boss"
+                
+                # Geef de image_key mee aan de Enemy constructor
+                boss = Enemy(boss_x, boss_y, self.map_data_original, is_boss=True, image_key=current_image_key)
+                # -----------------
+
                 if self.current_map_name == "director_room":
                     boss.hp = 500
                     boss.max_hp = 500
