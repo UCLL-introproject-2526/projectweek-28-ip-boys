@@ -48,6 +48,10 @@ class Enemy:
             self.is_cured = True 
 
     def get_grid_pos(self, x, y):
+        # KEYWORD: GRID CONVERSION
+        # [NL] Dit is een hulpfunctie die pixel-coördinaten (bv. 128px) omzet naar grid-vakjes (bv. vakje 2).
+        # [NL] We gebruiken de 'floor division' (//) om door de TILE_SIZE te delen en de rest weg te gooien.
+        # [NL] Dit hebben we nodig voor het pathfinding algoritme, dat in vakjes denkt en niet in pixels.
         return int(x // config.TILE_SIZE), int(y // config.TILE_SIZE)
 
     def is_walkable(self, col, row):
@@ -58,6 +62,12 @@ class Enemy:
         return True
 
     def find_next_step(self, target_rect):
+        # KEYWORD: PATHFINDING BFS
+        # [NL] Dit is het Breadth-First Search (BFS) algoritme. Het zoekt de kortste weg naar de speler.
+        # [NL] 1. We beginnen bij de positie van de vijand en stoppen die in een wachtrij (queue).
+        # [NL] 2. We kijken naar alle buren (links, rechts, boven, onder).
+        # [NL] 3. Als een buur beloopbaar is, voegen we die toe aan de wachtrij en onthouden we waar we vandaan kwamen.
+        # [NL] 4. Dit herhalen we tot we de speler hebben gevonden.
         start_col, start_row = self.get_grid_pos(self.rect.centerx, self.rect.centery)
         end_col, end_row = self.get_grid_pos(target_rect.centerx, target_rect.centery)
         
@@ -85,6 +95,10 @@ class Enemy:
                     queue.append((nx, ny))
         
         if found:
+            # KEYWORD: PATH RETRACING
+            # [NL] De weg is gevonden! Nu moeten we terugrekenen wat de *eerste* stap is.
+            # [NL] We beginnen bij de eindbestemming en lopen via 'came_from' terug naar het begin.
+            # [NL] De allerlaatste stap in deze terugweg (wat eigenlijk de eerste stap is voor de vijand) geven we terug.
             curr = (end_col, end_row)
             path = []
             while curr != (start_col, start_row):
@@ -100,6 +114,11 @@ class Enemy:
         return None
 
     def check_collision_simulation(self, dx, dy):
+        # KEYWORD: COLLISION PREDICTION
+        # [NL] Dit is 'voorspellende' collision. De vijand beweegt nog niet echt.
+        # [NL] We maken een kopie van de vijand (test_rect) en verplaatsen die denkbeeldig.
+        # [NL] Als die kopie een muur raakt, geven we True terug.
+        # [NL] Zo weet de AI dat hij die kant niet op moet gaan.
         test_rect = self.rect.copy()
         test_rect.x += dx
         test_rect.y += dy
@@ -165,6 +184,11 @@ class Enemy:
                     move_y = direct_move_y
 
         # ZOMBIE AI
+        # KEYWORD: CHASE BEHAVIOR
+        # [NL] Dit is de simpele AI voor normale zombies.
+        # [NL] Als de speler binnen de 'chase_radius' komt, berekenen we de vector naar de speler.
+        # [NL] We bewegen de zombie vervolgens direct in die richting.
+        # [NL] Als de speler te ver weg is, loopt de zombie willekeurig rond (patrol).
         elif distance < self.chase_radius:
             if distance > 0:
                 move_x = (dx / distance) * self.speed

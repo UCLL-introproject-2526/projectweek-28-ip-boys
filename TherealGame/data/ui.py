@@ -13,6 +13,10 @@ class UI:
         hp_percent = player.hp / config.PLAYER_HP_MAX
         pygame.draw.rect(self.screen, (50, 50, 50), (20, 20, bar_width, 25))
         
+        # KEYWORD: DYNAMIC COLOR
+        # [NL] We willen dat de levensbalk van kleur verandert als je bijna dood bent.
+        # [NL] We berekenen het percentage HP. Is het minder dan 50%? Oranje. Minder dan 20%? Rood.
+        # [NL] Anders blijft het groen.
         hp_color = (0, 255, 0)
         if hp_percent < 0.5: hp_color = (255, 165, 0)
         if hp_percent < 0.2: hp_color = (255, 0, 0)
@@ -65,6 +69,10 @@ class UI:
             self.screen.blit(text, (70, config.SCREEN_HEIGHT - 130 + i*30))
 
     def draw_full_screen_popup(self, title_text, options, bg_color):
+        # KEYWORD: TRANSPARENT OVERLAY
+        # [NL] We maken een nieuwe Surface die even groot is als het scherm.
+        # [NL] Met 'set_alpha(150)' maken we deze laag half doorzichtig (transparant).
+        # [NL] Door deze over het spel te tekenen, wordt de achtergrond donkerder.
         overlay = pygame.Surface((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
         overlay.set_alpha(150)
         overlay.fill((0, 0, 0))

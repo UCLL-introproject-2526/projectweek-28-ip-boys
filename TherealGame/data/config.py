@@ -14,6 +14,10 @@ FULLSCREEN = False
 TILE_SIZE = 64
 WALL_HEIGHT = 128 
 
+# KEYWORD: DIFFICULTY SETTINGS
+# [NL] Hier configureren we de moeilijkheidsgraden in een dictionary.
+# [NL] Elke graad heeft zijn eigen instellingen voor spawn_rate (hoe vaak zombies komen) en duisternis.
+# [NL] Door dit hier centraal op te slaan, kunnen we het makkelijk aanpassen zonder de game code te veranderen.
 DIFFICULTY_SETTINGS = {
     "EASY": {"spawn_rate": 450, "darkness": False, "color": (0, 255, 0)},
     "NORMAL": {"spawn_rate": 300, "darkness": False, "color": (255, 255, 0)},
@@ -71,6 +75,10 @@ TEXT_COLOR = (255, 255, 255)
 # =========================
 # PATHS
 # =========================
+# KEYWORD: FILE PATHS
+# [NL] We bouwen hier de paden naar de bestanden op een slimme manier.
+# [NL] os.path.join zorgt ervoor dat het werkt op zowel Windows (met backslash \) als Mac (met slash /).
+# [NL] We starten vanaf de map waar dit bestand staat en gaan zo naar de assets map.
 CURRENT_DIR = os.path.dirname(__file__)
 ROOT_DIR = os.path.dirname(CURRENT_DIR) 
 
@@ -94,6 +102,11 @@ def create_screen():
 def load_assets():
     print("--- ASSETS LADEN ---")
     
+    # KEYWORD: SMART LOADING
+    # [NL] Dit is een robuuste laad-functie.
+    # [NL] Eerst probeert hij het plaatje te laden als .png of .jpg.
+    # [NL] Als het bestand NIET gevonden wordt, crasht het spel niet.
+    # [NL] In plaats daarvan tekent hij een gekleurd vierkantje (placeholder) zodat je toch kunt testen.
     def load_smart(filename_base, w, h, color):
         full_path = os.path.join(IMAGE_PATH, filename_base + ".png")
         if not os.path.exists(full_path):

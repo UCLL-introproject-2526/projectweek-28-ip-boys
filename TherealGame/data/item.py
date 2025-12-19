@@ -10,6 +10,10 @@ class Item:
         self.float_direction = 0.5
 
     def draw(self, screen, camera_x, camera_y):
+        # KEYWORD: FLOATING ANIMATION
+        # [NL] We laten het item op en neer zweven om de aandacht te trekken.
+        # [NL] We tellen steeds een klein beetje bij de offset op.
+        # [NL] Als de offset te groot wordt (> 5), draaien we de richting om (float_direction *= -1).
         self.float_offset += self.float_direction
         if abs(self.float_offset) > 5: self.float_direction *= -1
         

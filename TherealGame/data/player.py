@@ -31,6 +31,10 @@ class Player:
         self.switch_cooldown = 0
 
     def handle_input(self, map_data, projectiles_list, game_instance):
+        # KEYWORD: INPUT HANDLING
+        # [NL] We vragen aan Pygame welke toetsen er op dit exacte moment zijn ingedrukt.
+        # [NL] Op basis daarvan bepalen we of we de 'dx' (horizontaal) of 'dy' (verticaal) moeten aanpassen.
+        # [NL] Ook houden we de kijkrichting ('up', 'down', etc) bij voor de animaties.
         keys = pygame.key.get_pressed()
         
         dx = 0
@@ -55,6 +59,10 @@ class Player:
             self.is_moving = True
 
         if self.is_moving:
+            # KEYWORD: ANIMATION FRAME
+            # [NL] Als de speler beweegt, verhogen we een timer.
+            # [NL] Zodra de timer vol is, wisselen we de 'animation_frame' van 0 naar 1 (of andersom).
+            # [NL] Dit zorgt ervoor dat het poppetje afwisselend zijn linker- en rechtervoet laat zien.
             self.animation_timer += 1
             if self.animation_timer >= self.animation_speed:
                 self.animation_timer = 0
@@ -62,6 +70,11 @@ class Player:
         else:
             self.animation_frame = 0 
 
+        # KEYWORD: COLLISION RESOLUTION
+        # [NL] Dit is het 'Separating Axis' principe in het klein.
+        # [NL] We bewegen EERST alleen op de X-as. Als we dan een muur raken, bewegen we meteen terug.
+        # [NL] DAARNA bewegen we op de Y-as en checken we weer.
+        # [NL] Dit voorkomt dat je vast komt te zitten in hoeken als je schuin beweegt.
         self.rect.x += dx
         if self.check_wall_collision(map_data, game_instance.teachers): self.rect.x -= dx
         self.rect.y += dy
@@ -90,6 +103,10 @@ class Player:
                 
                 offset_y = (config.PLAYER_VISUAL_SIZE - config.PLAYER_SIZE) // 2
                 bullet_y = self.rect.centery - offset_y 
+                # KEYWORD: SPAWN PROJECTILE
+                # [NL] Als we schieten, maken we een nieuw 'Projectile' object aan.
+                # [NL] We geven dit object de startpositie en de richting van de speler mee.
+                # [NL] Dit object voegen we toe aan de lijst 'projectiles_list' in game.py, die ze verder beheert.
                 bullet = Projectile(self.rect.centerx, bullet_y, self.direction, current_weapon)
                 projectiles_list.append(bullet)
                 self.shoot_cooldown = weapon_stats["cooldown"]
@@ -124,6 +141,10 @@ class Player:
         draw_x = self.rect.x - camera_x
         draw_y = self.rect.y - camera_y
         
+        # KEYWORD: ANIMATION STATE
+        # [NL] Hier kiezen we welk plaatje we daadwerkelijk gaan tekenen.
+        # [NL] We bouwen een string (bv. "walk_down_l") op basis van de richting en de loop-animatie.
+        # [NL] Vervolgens halen we het juiste plaatje op uit de ingeladen assets.
         sprite_key = self.direction 
         if self.is_moving:
             if self.direction in ["up", "down"]:

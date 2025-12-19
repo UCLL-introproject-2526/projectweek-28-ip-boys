@@ -4,6 +4,10 @@ from data.map_loader import load_map_from_file
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 MAP_DIR = os.path.join(BASE_DIR, "maps")
 
+# KEYWORD: DATA STORAGE
+# [NL] Dit is een 'Dictionary' waarin we alle levels opslaan.
+# [NL] We laden elk level in via de 'load_map_from_file' functie.
+# [NL] Door ze hier allemaal te verzamelen, kan game.py makkelijk wisselen door alleen de naam te roepen (bv. "classroom").
 ALL_MAPS = {
     "ground": load_map_from_file(os.path.join(MAP_DIR, "ground.txt")),
     "first": load_map_from_file(os.path.join(MAP_DIR, "first.txt")),

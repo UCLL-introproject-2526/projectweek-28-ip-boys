@@ -10,6 +10,10 @@ class Teacher:
         self.sprite_type = sprite_type # Sla op welk plaatje we moeten gebruiken
         
     def is_player_near(self, player_rect, distance=80):
+        # KEYWORD: PROXIMITY CHECK
+        # [NL] We willen weten of de speler dichtbij genoeg is om te praten.
+        # [NL] We gebruiken 'inflate' om de hitbox van de speler tijdelijk groter te maken.
+        # [NL] Als deze grotere hitbox de leraar raakt, staan we dichtbij genoeg.
         return self.rect.colliderect(player_rect.inflate(distance, distance))
 
     def draw(self, screen, camera_x, camera_y, player_rect):

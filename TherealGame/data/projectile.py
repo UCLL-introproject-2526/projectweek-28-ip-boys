@@ -17,6 +17,10 @@ class Projectile:
         elif self.direction == "left": self.rect.x -= self.speed
         elif self.direction == "right": self.rect.x += self.speed
 
+        # KEYWORD: MEMORY MANAGEMENT
+        # [NL] Als een kogel buiten het spel vliegt, moet hij weg.
+        # [NL] We checken hier of de coördinaten te groot of te klein zijn.
+        # [NL] Zo ja, zetten we 'active' op False. game.py zal hem dan uit de lijst verwijderen.
         if (self.rect.right < 0 or self.rect.left > 10000 or self.rect.bottom < 0 or self.rect.top > 10000):
             self.active = False
 

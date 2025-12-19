@@ -9,6 +9,10 @@ class Particle:
         self.y = y
         self.color = color
         # Willekeurige richting (explosie effect)
+        # KEYWORD: RANDOM VELOCITY
+        # [NL] We willen een explosie-effect nabootsen.
+        # [NL] Daarom kiezen we voor elk deeltje een willekeurige snelheid tussen -speed en +speed.
+        # [NL] Hierdoor vliegen ze allemaal een andere kant op vanuit het midden.
         self.dx = random.uniform(-speed_range, speed_range)
         self.dy = random.uniform(-speed_range, speed_range)
         self.size = random.randint(3, size_range)
@@ -51,6 +55,10 @@ class CuredStudent:
             draw_x = int(self.x - camera_x)
             
             # Beetje wiebelen links/rechts voor zweef effect
+            # KEYWORD: SINE WAVE ANIMATION
+            # [NL] We gebruiken de sinus wiskundige functie (math.sin).
+            # [NL] Een sinusgolf gaat soepel van -1 naar 1 en terug.
+            # [NL] Door dit op de x-positie toe te passen, lijkt het alsof de bubbel in de wind wiebelt.
             import math
             wobble_offset = math.sin(self.wobble) * 5 
             draw_x += wobble_offset

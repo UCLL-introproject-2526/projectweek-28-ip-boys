@@ -27,6 +27,10 @@ class Game:
         self.darkness_enabled = settings["darkness"]    
         
         # Lijsten
+        # KEYWORD: ENTITY LISTS
+        # [NL] We maken lege lijsten aan om onze spelobjecten in op te slaan.
+        # [NL] Dit is nodig omdat we vooraf niet weten hoeveel kogels of vijanden er zullen zijn.
+        # [NL] Tijdens het spelen voegen we objecten toe (append) of halen we ze weg (remove).
         self.projectiles = []
         self.enemies = []
         self.teachers = []
@@ -47,12 +51,13 @@ class Game:
         self.popup_timer = 0
 
         # Lighting
+        # KEYWORD: LIGHTING SYSTEM
+        # [NL] We maken een apart 'Surface' (laag) die we volledig zwart/donker maken.
+        # [NL] Later tekenen we hier een transparante cirkel op waar de speler is (zaklamp).
+        # [NL] Door deze laag over het spel te leggen met 'BLEND_MULT', krijgen we een nachteffect.
         self.night_surface = pygame.Surface((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
         self.ambient_light = (10, 10, 20) 
         self.flashlight_radius = 250      
-
-        # Stairs
-        self.stair_cooldown = 0
 
         if load_saved and os.path.exists(config.SAVE_FILE):
             self.load_game()
@@ -65,6 +70,10 @@ class Game:
         self.screen_shake = max(self.screen_shake, amount)
 
     def save_game(self):
+        # KEYWORD: SAVE SYSTEM
+        # [NL] We verzamelen alle belangrijke data (HP, XP, Positie, Welke wapens).
+        # [NL] Dit stoppen we in een Dictionary (sleutel-waarde paren).
+        # [NL] Vervolgens schrijven we dit weg naar een .json bestand op de harde schijf.
         data = {
             "difficulty": self.difficulty,
             "player_hp": self.player.hp,
@@ -120,6 +129,11 @@ class Game:
             self.load_map("ground") 
 
     def load_map(self, map_name):
+        # KEYWORD: MAP PARSING
+        # [NL] Hier gebeurt iets belangrijks: we zetten de tekstfile (met W, ., Z) om naar echte objecten.
+        # [NL] We gebruiken een dubbele for-loop: één voor de rijen (y) en één voor de kolommen (x).
+        # [NL] Als we een 'Z' zien, maken we een Enemy object aan op die x,y coördinaat.
+        # [NL] Als we een 'H' zien, maken we een Health item aan, enzovoort.
         self.current_map_name = map_name
         self.map_data_original = maps.ALL_MAPS[map_name]
         
@@ -196,6 +210,11 @@ class Game:
         self.save_game()
 
     def spawn_random_zombie(self):
+        # KEYWORD: ENEMY SPAWNING
+        # [NL] Dit zorgt ervoor dat er oneindig zombies bijkomen.
+        # [NL] We kiezen een willekeurige tegel op de map. Is het een vloer ('.')?
+        # [NL] Dan checken we met Pythagoras (dist) of die plek ver genoeg van de speler is (>400px).
+        # [NL] Zo ja, dan spawnen we daar een nieuwe vijand.
         if self.current_map_name not in ["ground", "first"]: return
         attempts = 0
         while attempts < 10:
@@ -213,9 +232,6 @@ class Game:
     def handle_input(self):
         keys = pygame.key.get_pressed()
         mouse_clicked = pygame.mouse.get_pressed()[0] 
-
-        if self.stair_cooldown > 0:
-            self.stair_cooldown -= 1
 
         if keys[pygame.K_ESCAPE]:
             self.state = "PAUSED"
@@ -254,6 +270,10 @@ class Game:
                     break 
 
         # Items
+        # KEYWORD: ITEM COLLECTION
+        # [NL] We itereren door alle items. Met 'colliderect' kijken we of de speler het item raakt.
+        # [NL] Als dat zo is, voeren we het effect uit (bv. HP erbij) en verwijderen we het item uit de lijst.
+        # [NL] Bij de sleutel zetten we ook nog een speciale 'flag' (has_key) op True.
         for item in self.items[:]:
             if self.player.rect.colliderect(item.rect):
                 if item.item_type == "health":
@@ -333,6 +353,11 @@ class Game:
             if hit_wall: continue 
 
             # Enemy Collision
+            # KEYWORD: COMBAT HIT DETECTION
+            # [NL] Voor elke kogel checken we of hij een vijand raakt (colliderect).
+            # [NL] Als dat zo is, doen we damage op de vijand.
+            # [NL] Als de vijand dood is (is_cured), spawnen we de 'CuredStudent' particle.
+            # [NL] Dit is de logica die bepaalt of je een vijand hebt verslagen.
             hit_enemy = False
             for e in self.enemies:
                 if not e.is_cured and p.rect.colliderect(e.rect):
@@ -347,6 +372,10 @@ class Game:
                         # --- HIER IS DE MAGIE: SPLAT & BUBBEL ---
                         
                         # 1. SPLAT! (Veel particles, paars/groen slijm effect)
+                        # KEYWORD: PARTICLE EFFECTS
+                        # [NL] Hier maken we een lus die 25 keer draait om 25 kleine deeltjes te maken.
+                        # [NL] We geven ze allemaal een willekeurige richting en kleur.
+                        # [NL] Dit zorgt voor het 'splat' effect als een zombie genezen is.
                         for _ in range(25):
                             splat_color = random.choice([(100, 200, 100), (50, 150, 50), (200, 0, 200)])
                             self.particles.append(Particle(e.rect.centerx, e.rect.centery, splat_color, speed_range=6, size_range=8))
@@ -371,6 +400,10 @@ class Game:
         # Verwijder genezen vijanden uit de lijst
         # (Omdat we nu een CuredStudent in de particles lijst stoppen, 
         # hoeven we de Enemy niet meer te bewaren voor de tekening)
+        # KEYWORD: LIST CLEANUP
+        # [NL] Dit is 'List Comprehension'. We maken een nieuwe lijst van vijanden.
+        # [NL] We kopiëren alleen de vijanden die NIET genezen zijn.
+        # [NL] De genezen vijanden worden hierdoor permanent uit het spel verwijderd.
         self.enemies = [e for e in self.enemies if not e.is_cured]
 
         # Player Hit
@@ -384,6 +417,10 @@ class Game:
                         self.state = "GAMEOVER"
 
     def check_events(self):
+        # KEYWORD: TILE EVENTS
+        # [NL] We berekenen op welke tegel (grid coördinaat) de speler staat.
+        # [NL] Vervolgens kijken we in de 'map_data' wat voor karakter daar staat.
+        # [NL] Is het een '1', '2' etc? Dan laden we een klaslokaal. Is het een '>', dan laden we de volgende verdieping.
         center_x, center_y = self.player.rect.centerx, self.player.rect.centery
         col = int(center_x // self.tile_size)
         row = int(center_y // self.tile_size)
@@ -423,7 +460,7 @@ class Game:
                     self.player.rect.y = 12 * self.tile_size 
                     self.save_game()
 
-            elif tile_char == 'L':
+            elif tile_char == '7':
                 if self.player.has_key:
                     self.saved_map_name = self.current_map_name
                     self.saved_position = (self.player.rect.x, self.player.rect.y)
@@ -455,38 +492,49 @@ class Game:
                         self.player.rect.x = 4 * self.tile_size
                         self.player.rect.y = 25 * self.tile_size
             
-
             # ===============================
-            # TRAPPEN (UP & DOWN) – TILE BASED
+            # TRAPPEN (UP & DOWN) – NEIGHBOR BASED
             # ===============================
 
-            elif tile_char == '>':
-                if self.stair_cooldown > 0:
-                    return
+            # --- TRAP NAAR VOLGENDE VERDIEPING (>) ---
+            for nr, nc in neighbors:
+                if 0 <= nr < len(self.map_data) and 0 <= nc < len(self.map_data[nr]):
+                    if self.map_data[nr][nc] == '>':
+                        stair_rect = pygame.Rect(
+                            nc * self.tile_size,
+                            nr * self.tile_size,
+                            self.tile_size,
+                            self.tile_size
+                        )
 
-                if len(self.cleared_rooms) < 6:
-                    if self.popup_timer == 0:
-                        self.show_popup_message("First defeat all bosses!")
-                        return
-                else:
-                    self.load_map("first")
-                    self.player.rect.topleft = self.find_spawn_point('<')
-                    self.stair_cooldown = 30
-                    self.save_game()
-                    return
-
-
-            elif tile_char == '<':
-                if self.stair_cooldown > 0:
-                    return
-
-                self.load_map("ground")
-                self.player.rect.topleft = self.find_spawn_point('>')
-                self.stair_cooldown = 30
-                self.save_game()
-                return
+                        if self.player.rect.colliderect(stair_rect.inflate(10, 10)):
+                            if len(self.cleared_rooms) < 6:
+                                if self.popup_timer == 0:
+                                    self.show_popup_message("First defeat all bosses!")
+                                    return
+                            else:
+                                self.load_map("first")
+                                self.player.rect.topleft = self.find_spawn_point('<')
+                                self.save_game()
+                                return
 
 
+                # --- TRAP TERUG NAAR BENEDEN (<) ---
+                for nr, nc in neighbors:
+                    if 0 <= nr < len(self.map_data) and 0 <= nc < len(self.map_data[nr]):
+                        if self.map_data[nr][nc] == '<':
+                            stair_rect = pygame.Rect(
+                                nc * self.tile_size,
+                                nr * self.tile_size,
+                                self.tile_size,
+                                self.tile_size
+                            )
+
+                            if self.player.rect.colliderect(stair_rect.inflate(10, 10)):
+                                self.load_map("ground")
+                                self.player.rect.topleft = self.find_spawn_point('>')
+                                self.save_game()
+                                return
 
 
     def draw(self):
@@ -499,6 +547,10 @@ class Game:
             shake_y = random.randint(-self.screen_shake, self.screen_shake)
             self.screen_shake -= 1
 
+        # KEYWORD: CAMERA LOGIC
+        # [NL] De camera volgt de speler. We berekenen een 'offset' (verschuiving).
+        # [NL] We zorgen ervoor dat de camera stopt bij de rand van de map (clamping).
+        # [NL] Als we later tekenen, trekken we deze camera_x en camera_y af van de posities van objecten.
         camera_x = max(0, min(self.player.rect.centerx - (config.SCREEN_WIDTH // 2), self.map_pixel_width - config.SCREEN_WIDTH))
         camera_y = max(0, min(self.player.rect.centery - (config.SCREEN_HEIGHT // 2), self.map_pixel_height - config.SCREEN_HEIGHT))
         camera_x += shake_x
@@ -519,6 +571,10 @@ class Game:
                 else: pygame.draw.rect(self.screen, (100,100,100), (x, y, self.tile_size, self.tile_size))
 
         # Entities
+        # KEYWORD: DEPTH SORTING
+        # [NL] Om 3D diepte te simuleren, moeten dingen die 'lager' staan (hogere Y) als laatste getekend worden.
+        # [NL] We sorteren alle objecten (spelers, vijanden, items) op hun rij-nummer.
+        # [NL] Daarna tekenen we ze rij voor rij, zodat de speler 'voor' een muur kan staan in plaats van erachter.
         entities_by_row = {}
         p_row = int(self.player.rect.centery // self.tile_size)
         if p_row not in entities_by_row: entities_by_row[p_row] = []
@@ -582,6 +638,10 @@ class Game:
             player_screen_x = self.player.rect.centerx - camera_x
             player_screen_y = self.player.rect.centery - camera_y
             pygame.draw.circle(self.night_surface, (255, 255, 255), (player_screen_x, player_screen_y), self.flashlight_radius)
+            # KEYWORD: BLEND MODE
+            # [NL] Hier passen we de lichtlaag toe op het scherm.
+            # [NL] De BLEND_MULT vlag zorgt ervoor dat pixels met elkaar vermenigvuldigd worden.
+            # [NL] Donkere pixels op de 'night_surface' maken het spel donker, witte pixels (zaklamp) laten het spel zien.
             self.screen.blit(self.night_surface, (0, 0), special_flags=pygame.BLEND_MULT)
 
         # UI

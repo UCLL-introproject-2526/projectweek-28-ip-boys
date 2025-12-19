@@ -91,6 +91,10 @@ class Story:
         )
 
         # ---- TEXTBOX BEWEGING ----
+        # KEYWORD: SLIDE ANIMATION
+        # [NL] We willen dat het tekstvak mooi van onder naar boven schuift.
+        # [NL] We checken of de huidige Y-positie (textbox_y) groter is dan het doel (target_y).
+        # [NL] Zo ja, trekken we er elke frame de snelheid vanaf. Dit creëert de animatie.
         if self.textbox_y > self.textbox_target_y:
             self.textbox_y -= self.textbox_speed
             if self.textbox_y < self.textbox_target_y:
