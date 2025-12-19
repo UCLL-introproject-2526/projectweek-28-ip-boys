@@ -154,7 +154,11 @@ def load_assets():
     ASSETS["enemy_left"] = pygame.transform.flip(monster, True, False)
     ASSETS["enemy"] = monster 
 
+    ASSETS["enemy"] = monster 
+
     ASSETS["boss"] = load_smart("boss", 250, 250, (100, 0, 100))
+    # VOEG DEZE REGEL TOE: Laad de speciale director boss sprite
+    ASSETS["director_boss"] = load_smart("director_boss", 250, 250, (50, 0, 50))
     
     # --- NIEUW: APARTE SPRITES VOOR LERAAR EN DIRECTEUR ---
     ASSETS["teacher"] = load_smart("teacher", TILE_SIZE *2, TILE_SIZE *2, WHITE)
