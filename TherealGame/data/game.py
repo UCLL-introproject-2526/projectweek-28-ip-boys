@@ -446,7 +446,7 @@ class Game:
         neighbors = [(row, col+1), (row, col-1), (row+1, col), (row-1, col)]
         for nr, nc in neighbors:
             if 0 <= nr < len(self.map_data) and 0 <= nc < len(self.map_data[nr]):
-                if self.map_data[nr][nc] == 'L':
+                if self.map_data[nr][nc] == 'L' and self.current_map_name == "ground":
                     door_rect = pygame.Rect(nc*self.tile_size, nr*self.tile_size, self.tile_size, self.tile_size)
                     if self.player.rect.colliderect(door_rect.inflate(10, 10)):
                         if self.player.has_key:
@@ -476,21 +476,6 @@ class Game:
                     self.player.rect.x = 9 * self.tile_size 
                     self.player.rect.y = 12 * self.tile_size 
                     self.save_game()
-
-            elif tile_char == '7':
-                if self.player.has_key:
-                    self.saved_map_name = self.current_map_name
-                    self.saved_position = (self.player.rect.x, self.player.rect.y)
-                    self.current_room_id = "director_room"
-                    self.load_map("director_room")
-                    self.player.rect.x = 9 * self.tile_size
-                    self.player.rect.y = 8 * self.tile_size
-                    self.player.has_key = False
-                    self.show_popup_message("DOOR OPENED!")
-                    self.save_game()
-                else:
-                    if self.popup_timer == 0:
-                        self.show_popup_message("CLOSED! SEARCH FOR A KEY")
 
             
             elif tile_char == 'E':
